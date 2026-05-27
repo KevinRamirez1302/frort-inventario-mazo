@@ -1,8 +1,17 @@
-import { useState, useMemo, useCallback } from 'react'
-import { Search, Plus, Edit2, Trash2, ChevronDown, Loader2 } from 'lucide-react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
+import {
+  Search, Plus, Edit2, Trash2, ChevronDown, Loader2,
+  ScanLine, Flashlight, FlashlightOff, X, QrCode,
+  CheckCircle2, CameraOff, RefreshCw,
+} from 'lucide-react'
 import { twMerge } from 'tailwind-merge'
 import { Modal } from './Modal'
 import { useToast } from '../hooks/useToast'
+import { useScanner } from '../hooks/useScanner'
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
 interface Column<T> {
   key: string
@@ -16,6 +25,12 @@ interface FormField {
   type?: string
   required?: boolean
   options?: { value: string; label: string }[]
+  /**
+   * Si es true, muestra un botón de escáner dentro del input.
+   * Al leer el código, se intenta poblar todos los campos del formulario
+   * mediante el parser inteligente.
+   */
+  scannable?: boolean
 }
 
 interface DataTableProps<T extends { id: number }> {
@@ -32,9 +47,316 @@ interface DataTableProps<T extends { id: number }> {
   formFields: FormField[]
 }
 
+// ---------------------------------------------------------------------------
+// Styles
+// ---------------------------------------------------------------------------
+
 const INPUT_CLS = 'w-full bg-[#111114] border border-[#27272a] rounded-xl px-4 py-2.5 text-sm text-[#fafafa] placeholder-[#71717a] transition-all duration-200 focus:outline-none focus:border-[#7c3aed] focus:ring-2 focus:ring-[#7c3aed]/20'
 const BTN_PRIMARY = 'inline-flex items-center justify-center gap-2 bg-[#7c3aed] hover:bg-[#6d28d9] text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed'
 const BTN_SECONDARY = 'inline-flex items-center justify-center gap-2 bg-[#18181b] hover:bg-[#1e1e22] text-[#a1a1aa] hover:text-[#fafafa] text-sm font-medium px-4 py-2.5 rounded-xl border border-[#27272a] transition-all duration-200 active:scale-[0.98]'
+
+// ---------------------------------------------------------------------------
+// Smart scan-result parser
+//
+// Intenta extraer datos estructurados del texto escaneado y los mapea a los
+// campos conocidos del formulario de productos.
+// ---------------------------------------------------------------------------
+
+/** Alias de nombres de campo → clave canónica del formulario */
+const FIELD_ALIASES: Record<string, string> = {
+  // nombre
+  nombre: 'nombre', name: 'nombre',
+  // descripcion
+  descripcion: 'descripcion', description: 'descripcion', desc: 'descripcion',
+  // marca
+  marca: 'marca', brand: 'marca', manufacturer: 'marca', fabricante: 'marca', mfr: 'marca',
+  // modelo
+  modelo: 'modelo', model: 'modelo', mdl: 'modelo',
+  // numero de serie
+  numeroserie: 'numeroSerie', serial: 'numeroSerie', sn: 'numeroSerie',
+  serialnumber: 'numeroSerie', seriennummer: 'numeroSerie', nserie: 'numeroSerie',
+  // ubicacion
+  ubicacion: 'ubicacion', location: 'ubicacion', loc: 'ubicacion', lugar: 'ubicacion',
+  // precio
+  precio: 'precio', price: 'precio', coste: 'precio', cost: 'precio',
+  // fecha
+  fechaadquisicion: 'fechaAdquisicion', fecha: 'fechaAdquisicion', date: 'fechaAdquisicion',
+}
+
+function normalizeKey(raw: string): string {
+  return raw.toLowerCase().replace(/[\s_\-]/g, '').replace(/[^a-z]/g, '')
+}
+
+function mapKey(raw: string): string {
+  const norm = normalizeKey(raw)
+  return FIELD_ALIASES[norm] ?? raw
+}
+
+/**
+ * Parsea el texto de un código escaneado e intenta extraer tantos campos
+ * del formulario como sea posible.
+ *
+ * Soporta tres formatos en este orden:
+ *  1. JSON: `{"nombre":"Laptop","marca":"Dell","numeroSerie":"SN123"}`
+ *  2. Pares clave:valor separados por `|` `\n` o `;`:
+ *     `marca:Dell|modelo:XPS 15|sn:SN123`
+ *  3. Texto plano → se asigna directamente a `numeroSerie`
+ */
+function parseScanToFields(rawText: string): Record<string, unknown> {
+  const text = rawText.trim()
+
+  // 1) JSON
+  try {
+    const obj = JSON.parse(text)
+    if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
+      const result: Record<string, unknown> = {}
+      for (const [k, v] of Object.entries(obj)) {
+        result[mapKey(k)] = v
+      }
+      return result
+    }
+  } catch { /* not JSON */ }
+
+  // 2) Pares clave=valor o clave:valor
+  const pairs = text.split(/[|\n;]/).map(s => s.trim()).filter(Boolean)
+  const mapped: Record<string, unknown> = {}
+  let hits = 0
+  for (const pair of pairs) {
+    const m = pair.match(/^([^:=]+)[=:](.*)$/)
+    if (m) {
+      const fieldKey = mapKey(m[1].trim())
+      mapped[fieldKey] = m[2].trim()
+      hits++
+    }
+  }
+  if (hits > 0) return mapped
+
+  // 3) Texto plano → numeroSerie
+  return { numeroSerie: text }
+}
+
+// ---------------------------------------------------------------------------
+// Inline scanner panel (se muestra como modal sobre el modal del formulario)
+// ---------------------------------------------------------------------------
+
+interface ScannerPanelProps {
+  onResult: (text: string) => void
+  onClose: () => void
+}
+
+function ScannerPanel({ onResult, onClose }: ScannerPanelProps) {
+  const {
+    status, result, errorMessage,
+    isTorchOn, isTorchAvailable,
+    videoRef, startScanning, stopScanning, toggleTorch, reset,
+  } = useScanner()
+
+  // Iniciar cámara en el siguiente tick para que React haya montado el <video>
+  useEffect(() => {
+    const timer = setTimeout(() => startScanning(), 60)
+    return () => {
+      clearTimeout(timer)
+      stopScanning()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Notificar al padre cuando hay resultado
+  useEffect(() => {
+    if (status === 'success' && result) {
+      onResult(result.text)
+    }
+  }, [status, result, onResult])
+
+  // ⚠️ Interceptar Escape para que no cierre el Modal de registro que está detrás
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopImmediatePropagation()
+        stopScanning()
+        onClose()
+      }
+    }
+    window.addEventListener('keydown', handler, true) // capture=true → va antes que el listener del Modal
+    return () => window.removeEventListener('keydown', handler, true)
+  }, [onClose, stopScanning])
+
+  const handleRetry = () => {
+    reset()
+    setTimeout(() => startScanning(), 60)
+  }
+
+  const isShowingCamera = status === 'scanning' || status === 'requesting'
+
+  return (
+    // z-[60] para estar por encima del Modal (z-50)
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(8px)' }}
+      onClick={e => { if (e.target === e.currentTarget) { stopScanning(); onClose() } }}
+    >
+      <div className="w-full max-w-sm bg-[#111114]/98 backdrop-blur-2xl rounded-3xl border border-[#27272a] overflow-hidden shadow-2xl">
+
+        {/* Cabecera */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#27272a]">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-xl bg-[#7c3aed]/15 flex items-center justify-center">
+              <QrCode size={14} className="text-[#7c3aed]" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-[#fafafa]">Escanear código</p>
+              <p className="text-[10px] text-[#71717a] font-mono">QR · EAN · Code128 · PDF417 · más</p>
+            </div>
+          </div>
+          <button
+            onClick={() => { stopScanning(); onClose() }}
+            className="p-1.5 rounded-lg text-[#71717a] hover:text-[#fafafa] hover:bg-[#18181b] transition-all cursor-pointer"
+            aria-label="Cerrar escáner"
+          >
+            <X size={15} />
+          </button>
+        </div>
+
+        {/* ── El <video> SIEMPRE está en el DOM para que videoRef.current sea válido ── */}
+        <div className={isShowingCamera ? 'block' : 'hidden'}>
+          <div className="relative aspect-[4/3] bg-black overflow-hidden">
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              playsInline
+              className="w-full h-full object-cover"
+              aria-label="Vista de cámara"
+            />
+
+            {/* Marco de guía animado */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="relative w-52 h-52">
+                <span className="absolute top-0 left-0 w-7 h-7 border-t-2 border-l-2 border-[#7c3aed] rounded-tl-lg" />
+                <span className="absolute top-0 right-0 w-7 h-7 border-t-2 border-r-2 border-[#7c3aed] rounded-tr-lg" />
+                <span className="absolute bottom-0 left-0 w-7 h-7 border-b-2 border-l-2 border-[#7c3aed] rounded-bl-lg" />
+                <span className="absolute bottom-0 right-0 w-7 h-7 border-b-2 border-r-2 border-[#7c3aed] rounded-br-lg" />
+                {status === 'scanning' && (
+                  <div
+                    className="absolute left-1 right-1 h-0.5 bg-[#7c3aed]/80 rounded-full"
+                    style={{ animation: 'scanLine 2s ease-in-out infinite' }}
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* Vignette radial */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{ background: 'radial-gradient(ellipse 55% 50% at 50% 50%, transparent 0%, rgba(0,0,0,0.45) 100%)' }}
+            />
+
+            {/* Spinner superpuesto mientras se obtiene el stream */}
+            {status === 'requesting' && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                <div className="w-8 h-8 border-2 border-[#7c3aed] border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+
+            {/* Controles: torch y cancel */}
+            {status === 'scanning' && (
+              <div className="absolute bottom-3 left-0 right-0 flex items-center justify-between px-4">
+                <button
+                  onClick={toggleTorch}
+                  disabled={!isTorchAvailable}
+                  className="p-2.5 rounded-xl bg-black/50 backdrop-blur-sm text-white disabled:opacity-30 hover:bg-black/70 transition-all cursor-pointer"
+                  aria-label={isTorchOn ? 'Apagar flash' : 'Encender flash'}
+                >
+                  {isTorchOn ? <FlashlightOff size={16} /> : <Flashlight size={16} />}
+                </button>
+
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse" />
+                  <span className="text-[10px] text-white font-mono">Buscando...</span>
+                </div>
+
+                <button
+                  onClick={() => { stopScanning(); onClose() }}
+                  className="p-2.5 rounded-xl bg-black/50 backdrop-blur-sm text-white hover:bg-black/70 transition-all cursor-pointer"
+                  aria-label="Cancelar"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            )}
+          </div>
+
+          <p className="text-center text-[11px] text-[#71717a] py-3 px-4">
+            Apunta al código QR, de barras u otro código del producto
+          </p>
+        </div>
+
+        {/* Resultado exitoso */}
+        {status === 'success' && result && (
+          <div className="flex flex-col gap-4 p-5">
+            <div className="flex flex-col items-center gap-2 text-center">
+              <div className="w-12 h-12 rounded-full bg-[#10b981]/15 border border-[#10b981]/30 flex items-center justify-center">
+                <CheckCircle2 size={22} className="text-[#10b981]" />
+              </div>
+              <p className="text-sm font-bold text-[#fafafa]">¡Código detectado!</p>
+              <p className="text-[10px] text-[#71717a] font-mono">Formato: {result.format}</p>
+            </div>
+
+            <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-3">
+              <p className="text-[10px] text-[#71717a] font-mono uppercase tracking-wider mb-1">Contenido</p>
+              <p className="text-xs text-[#fafafa] break-all font-mono leading-relaxed">{result.text}</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={handleRetry}
+                className="flex items-center justify-center gap-1.5 text-xs font-medium text-[#a1a1aa] hover:text-[#fafafa] py-2.5 rounded-xl border border-[#27272a] bg-[#18181b] hover:bg-[#1e1e22] transition-all cursor-pointer"
+              >
+                <RefreshCw size={13} /> Reintentar
+              </button>
+              <button
+                onClick={() => onResult(result.text)}
+                className="flex items-center justify-center gap-1.5 text-xs font-medium text-white py-2.5 rounded-xl bg-[#7c3aed] hover:bg-[#6d28d9] transition-all cursor-pointer"
+              >
+                <CheckCircle2 size={13} /> Usar este
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Error de cámara */}
+        {status === 'error' && (
+          <div className="flex flex-col items-center gap-4 py-10 px-6 text-center">
+            <div className="w-12 h-12 rounded-full bg-[#ef4444]/10 border border-[#ef4444]/20 flex items-center justify-center">
+              <CameraOff size={20} className="text-[#ef4444]" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-bold text-[#fafafa]">Sin acceso a cámara</p>
+              <p className="text-xs text-[#71717a] leading-relaxed">{errorMessage}</p>
+            </div>
+            <button
+              onClick={handleRetry}
+              className="flex items-center gap-2 text-xs font-medium text-[#ef4444] py-2.5 px-5 rounded-xl border border-[#ef4444]/20 bg-[#ef4444]/10 hover:bg-[#ef4444]/20 transition-all cursor-pointer"
+            >
+              <RefreshCw size={13} /> Reintentar
+            </button>
+          </div>
+        )}
+
+        <style>{`
+          @keyframes scanLine {
+            0%, 100% { top: 10%; opacity: 0.8; }
+            50%       { top: 85%; opacity: 1;   }
+          }
+        `}</style>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// DataTable
+// ---------------------------------------------------------------------------
 
 export function DataTable<T extends { id: number }>({
   title, subtitle, columns, data, loading, error,
@@ -45,6 +367,7 @@ export function DataTable<T extends { id: number }>({
   const [editing, setEditing] = useState<T | null>(null)
   const [formData, setFormData] = useState<Record<string, unknown>>({})
   const [submitting, setSubmitting] = useState(false)
+  const [isScannerOpen, setIsScannerOpen] = useState(false)
   const { addToast } = useToast()
 
   const filtered = useMemo(() => {
@@ -94,6 +417,22 @@ export function DataTable<T extends { id: number }>({
       addToast((err as Error).message, 'error')
     }
   }, [onDelete, addToast])
+
+  /**
+   * Recibe el texto crudo del escáner, lo parsea con el parser inteligente
+   * y rellena todos los campos del formulario que hayan sido identificados.
+   */
+  const handleScanResult = useCallback((rawText: string) => {
+    const fields = parseScanToFields(rawText)
+    setFormData(prev => ({ ...prev, ...fields }))
+    setIsScannerOpen(false)
+
+    // Mostrar un resumen de los campos rellenados
+    const filled = Object.keys(fields)
+      .map(k => formFields.find(f => f.key === k)?.label ?? k)
+      .join(', ')
+    addToast(`Escáner: campos rellenados → ${filled}`, 'success')
+  }, [formFields, addToast])
 
   return (
     <div className="space-y-6 animate-fade-up">
@@ -202,7 +541,6 @@ export function DataTable<T extends { id: number }>({
           </table>
         </div>
 
-        {/* Footer count */}
         {!loading && filtered.length > 0 && (
           <div className="px-5 py-3 border-t border-[#27272a] text-xs text-[#71717a] font-mono">
             {filtered.length} de {data.length} registros
@@ -214,11 +552,12 @@ export function DataTable<T extends { id: number }>({
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Editar registro' : 'Nuevo registro'}>
         <form onSubmit={handleSubmit} className="space-y-4">
           {formFields.map(f => (
-            <FormField
+            <FormFieldItem
               key={f.key}
               field={f}
               value={formData[f.key]}
               onChange={val => setFormData(prev => ({ ...prev, [f.key]: val }))}
+              onScan={f.scannable ? () => setIsScannerOpen(true) : undefined}
             />
           ))}
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#27272a]">
@@ -232,16 +571,29 @@ export function DataTable<T extends { id: number }>({
           </div>
         </form>
       </Modal>
+
+      {/* Scanner panel — se monta solo cuando está abierto */}
+      {isScannerOpen && (
+        <ScannerPanel
+          onResult={handleScanResult}
+          onClose={() => setIsScannerOpen(false)}
+        />
+      )}
     </div>
   )
 }
 
-function FormField({
-  field, value, onChange,
+// ---------------------------------------------------------------------------
+// FormFieldItem — campo de formulario con soporte opcional de botón escáner
+// ---------------------------------------------------------------------------
+
+function FormFieldItem({
+  field, value, onChange, onScan,
 }: {
   field: FormField
   value: unknown
   onChange: (val: unknown) => void
+  onScan?: () => void
 }) {
   return (
     <div className="space-y-1.5">
@@ -249,7 +601,9 @@ function FormField({
         {field.label}
         {field.required && <span className="text-[#ef4444] ml-1">*</span>}
       </label>
+
       {field.options ? (
+        /* Select */
         <div className="relative">
           <select
             value={String(value ?? '')}
@@ -264,7 +618,9 @@ function FormField({
           </select>
           <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#71717a] pointer-events-none" />
         </div>
+
       ) : field.type === 'textarea' ? (
+        /* Textarea */
         <textarea
           value={String(value ?? '')}
           onChange={e => onChange(e.target.value)}
@@ -272,14 +628,35 @@ function FormField({
           rows={3}
           required={field.required}
         />
+
       ) : (
-        <input
-          type={field.type || 'text'}
-          value={String(value ?? '')}
-          onChange={e => onChange(field.type === 'number' ? Number(e.target.value) : e.target.value)}
-          className={twMerge(INPUT_CLS, 'w-full')}
-          required={field.required}
-        />
+        /* Input de texto con botón escáner opcional */
+        <div className="relative">
+          <input
+            type={field.type || 'text'}
+            value={String(value ?? '')}
+            onChange={e => onChange(field.type === 'number' ? Number(e.target.value) : e.target.value)}
+            className={twMerge(INPUT_CLS, 'w-full', onScan && 'pr-11')}
+            required={field.required}
+          />
+          {onScan && (
+            <button
+              type="button"
+              onClick={onScan}
+              title="Escanear código QR / barras"
+              aria-label="Escanear código"
+              className={twMerge(
+                'absolute right-2 top-1/2 -translate-y-1/2',
+                'w-7 h-7 flex items-center justify-center rounded-lg',
+                'text-[#7c3aed] bg-[#7c3aed]/10 hover:bg-[#7c3aed]/20',
+                'border border-[#7c3aed]/30 hover:border-[#7c3aed]/60',
+                'transition-all duration-150 active:scale-90 cursor-pointer',
+              )}
+            >
+              <ScanLine size={14} />
+            </button>
+          )}
+        </div>
       )}
     </div>
   )

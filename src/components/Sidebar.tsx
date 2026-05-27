@@ -1,8 +1,8 @@
 import {
   LayoutDashboard, Package, Tags, Users, ArrowLeftRight, HandCoins,
-  Monitor,
 } from 'lucide-react'
 import { twMerge } from 'tailwind-merge'
+import logoMazito from '../assets/mazito.png'
 
 type TabKey = 'dashboard' | 'productos' | 'categorias' | 'usuarios' | 'movimientos' | 'prestamos'
 
@@ -26,9 +26,20 @@ export type { TabKey }
 interface SidebarProps {
   activeTab: TabKey
   onTabChange: (tab: TabKey) => void
+  profile: { nombre: string; email: string; avatar: string }
 }
 
-export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
+export function Sidebar({ activeTab, onTabChange, profile }: SidebarProps) {
+  // Get initials for profile avatar
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase() || 'AD'
+  }
+
   return (
     <>
       {/* Desktop sidebar */}
@@ -36,8 +47,8 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
         {/* Logo */}
         <div className="px-6 py-6 border-b border-[#27272a]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#7c3aed] flex items-center justify-center shadow-lg shadow-[#7c3aed]/20">
-              <Monitor size={20} className="text-white" />
+            <div className="w-14 h-14 flex items-center justify-center">
+              <img src={logoMazito} alt="Logo Mazito" className="w-full h-full object-contain" />
             </div>
             <div>
               <h1 className="text-base font-bold text-[#fafafa] tracking-tight" style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>Inventario IT</h1>
@@ -77,12 +88,16 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
         {/* Footer */}
         <div className="px-6 py-4 border-t border-[#27272a]">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#18181b] flex items-center justify-center text-xs font-bold text-[#71717a]">
-              AD
-            </div>
+            {profile.avatar ? (
+              <img src={profile.avatar} alt="Avatar" className="w-8 h-8 rounded-full object-cover border border-border-subtle" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-[#18181b] flex items-center justify-center text-xs font-bold text-[#71717a] uppercase">
+                {getInitials(profile.nombre)}
+              </div>
+            )}
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-[#fafafa] truncate">Admin</p>
-              <p className="text-xs text-[#71717a] truncate">admin@instituto.es</p>
+              <p className="text-sm text-[#fafafa] truncate">{profile.nombre}</p>
+              <p className="text-xs text-[#71717a] truncate">{profile.email}</p>
             </div>
           </div>
         </div>

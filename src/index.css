@@ -1,22 +1,80 @@
 @import "tailwindcss";
 
+:root {
+  --bg-base: #09090b;
+  --bg-surface: #111114;
+  --bg-elevated: #18181b;
+  --bg-overlay: #1e1e22;
+
+  --border-subtle: #27272a;
+  --border-default: #3f3f46;
+  --border-focus: #7c3aed;
+
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+
+  --gradient-color-1: rgba(124, 58, 237, 0.08);
+  --gradient-color-2: rgba(59, 130, 246, 0.06);
+}
+
+:root.light {
+  --bg-base: #f4f4f5;
+  --bg-surface: #ffffff;
+  --bg-elevated: #e4e4e7;
+  --bg-overlay: #f4f4f5;
+
+  --border-subtle: #e4e4e7;
+  --border-default: #d4d4d8;
+  --border-focus: #7c3aed;
+
+  --text-primary: #09090b;
+  --text-secondary: #27272a;
+  --text-muted: #71717a;
+
+  --gradient-color-1: rgba(124, 58, 237, 0.04);
+  --gradient-color-2: rgba(59, 130, 246, 0.03);
+
+  /* Override hardcoded dark-mode hex utility classes compiled by Tailwind CSS */
+  .text-\[\#fafafa\] { color: var(--text-primary) !important; }
+  .text-\[\#a1a1aa\] { color: var(--text-secondary) !important; }
+  .text-\[\#71717a\] { color: var(--text-muted) !important; }
+  
+  .bg-\[\#111114\] { background-color: var(--bg-surface) !important; }
+  .bg-\[\#111114\]\/50 { background-color: rgba(255, 255, 255, 0.5) !important; }
+  .bg-\[\#18181b\] { background-color: var(--bg-elevated) !important; }
+  .bg-\[\#18181b\]\/85 { background-color: rgba(255, 255, 255, 0.85) !important; }
+  .bg-\[\#18181b\]\/60 { background-color: rgba(255, 255, 255, 0.6) !important; }
+  .bg-\[\#1e1e22\] { background-color: var(--bg-overlay) !important; }
+
+  .border-\[\#27272a\] { border-color: var(--border-subtle) !important; }
+  .border-\[\#27272a\]\/50 { border-color: rgba(9, 9, 11, 0.1) !important; }
+  .border-\[\#27272a\]\/40 { border-color: rgba(9, 9, 11, 0.08) !important; }
+  .border-\[\#27272a\]\/60 { border-color: rgba(9, 9, 11, 0.12) !important; }
+  .border-\[\#3f3f46\]\/60 { border-color: rgba(9, 9, 11, 0.15) !important; }
+
+  .hover\:bg-\[\#18181b\]:hover { background-color: var(--bg-elevated) !important; }
+  .hover\:text-\[\#fafafa\]:hover { color: var(--text-primary) !important; }
+  .hover\:bg-\[\#1e1e22\]:hover { background-color: var(--bg-overlay) !important; }
+}
+
 @theme {
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
   --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
 
-  --color-bg-base: #09090b;
-  --color-bg-surface: #111114;
-  --color-bg-elevated: #18181b;
-  --color-bg-overlay: #1e1e22;
+  --color-bg-base: var(--bg-base);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-overlay: var(--bg-overlay);
 
-  --color-border-subtle: #27272a;
-  --color-border-default: #3f3f46;
-  --color-border-focus: #7c3aed;
+  --color-border-subtle: var(--border-subtle);
+  --color-border-default: var(--border-default);
+  --color-border-focus: var(--border-focus);
 
-  --color-text-primary: #fafafa;
-  --color-text-secondary: #a1a1aa;
-  --color-text-muted: #71717a;
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
 
   --color-brand: #7c3aed;
   --color-brand-hover: #6d28d9;
@@ -31,7 +89,7 @@
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #3f3f46 transparent;
+  scrollbar-color: var(--border-default) transparent;
 }
 
 html, body, #root {
@@ -39,20 +97,22 @@ html, body, #root {
 }
 
 body {
-  background-color: #09090b;
-  color: #fafafa;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Animated gradient background */
 .bg-gradient-mesh {
   background:
-    radial-gradient(ellipse 80% 60% at 10% 0%, rgba(124, 58, 237, 0.08) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 80% at 90% 100%, rgba(59, 130, 246, 0.06) 0%, transparent 60%),
-    #09090b;
+    radial-gradient(ellipse 80% 60% at 10% 0%, var(--gradient-color-1) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 80% at 90% 100%, var(--gradient-color-2) 0%, transparent 60%),
+    var(--bg-base);
   min-height: 100vh;
+  transition: background-color 0.3s ease;
 }
 
 /* Glass effect */

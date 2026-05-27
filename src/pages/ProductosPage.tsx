@@ -67,7 +67,7 @@ export function ProductosPage() {
         { key: 'descripcion', label: 'Descripción', type: 'textarea' },
         { key: 'marca', label: 'Marca' },
         { key: 'modelo', label: 'Modelo' },
-        { key: 'numeroSerie', label: 'Nº Serie' },
+        { key: 'numeroSerie', label: 'Nº Serie', scannable: true },
         { key: 'estado', label: 'Estado', options: [
           { value: 'disponible', label: 'Disponible' },
           { value: 'asignado', label: 'Asignado' },
