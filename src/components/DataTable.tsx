@@ -488,12 +488,12 @@ export function DataTable<T extends { id: number }>({
   return (
     <div className="space-y-6 animate-fade-up">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-display font-bold text-[#fafafa]">{title}</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-display font-bold text-[#fafafa] truncate">{title}</h1>
           {subtitle && <p className="text-[#71717a] text-sm mt-1">{subtitle}</p>}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <button onClick={onRefresh} className={BTN_SECONDARY} aria-label="Refrescar datos">
             <Loader2 size={16} className={twMerge('transition-transform', loading && 'animate-spin')} />
           </button>
@@ -520,7 +520,7 @@ export function DataTable<T extends { id: number }>({
           placeholder="Buscar registros..."
           value={search}
           onChange={e => handleSearchChange(e.target.value)}
-          className={twMerge(INPUT_CLS, 'pl-10 w-full sm:w-80')}
+          className={twMerge(INPUT_CLS, 'pl-10 w-full sm:max-w-sm')}
           aria-label="Buscar registros"
         />
       </div>

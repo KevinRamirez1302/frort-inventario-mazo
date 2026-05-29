@@ -55,6 +55,8 @@ function AppContent({ onLogout }: AppContentProps) {
   const [productSearchQuery, setProductSearchQuery] = useState('')
   const [initialNewProductData, setInitialNewProductData] = useState<Record<string, unknown> | null>(null)
 
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false)
+
   const handleScanSuccess = (text: string, _format: string) => {
     setIsScannerOpen(false)
     const scannedCode = text.trim()
@@ -113,7 +115,7 @@ function AppContent({ onLogout }: AppContentProps) {
         role={role}
       />
 
-      <main className="flex-1 p-4 lg:p-8 pt-16 lg:pt-20 pb-28 lg:pb-8 overflow-y-auto max-w-[1600px] relative">
+      <main className="flex-1 p-4 lg:p-8 pt-20 lg:pt-20 pb-28 lg:pb-8 overflow-y-auto max-w-[1600px] mx-auto w-full relative">
         {/* Floating Theme Toggle and Logout Buttons */}
         <div className="absolute top-4 right-4 lg:top-8 lg:right-8 z-30 flex items-center gap-2.5">
           <button
@@ -137,7 +139,7 @@ function AppContent({ onLogout }: AppContentProps) {
           </button>
 
           <button
-            onClick={onLogout}
+            onClick={() => setIsLogoutConfirmOpen(true)}
             className="p-3 rounded-xl border border-border-subtle bg-bg-surface/70 backdrop-blur-md text-text-secondary hover:text-[#ef4444] hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg cursor-pointer flex items-center justify-center"
             title="Cerrar sesión"
           >
@@ -364,6 +366,43 @@ function AppContent({ onLogout }: AppContentProps) {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Logout Confirmation Modal */}
+      <Modal
+        open={isLogoutConfirmOpen}
+        onClose={() => setIsLogoutConfirmOpen(false)}
+        title="Cerrar sesión"
+        size="sm"
+      >
+        <div className="space-y-6">
+          <div className="flex items-start gap-4 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400">
+            <div className="w-10 h-10 rounded-xl bg-red-500/15 flex items-center justify-center flex-shrink-0 text-red-500">
+              <AlertTriangle size={20} />
+            </div>
+            <div>
+              <p className="font-bold text-sm text-[#fafafa]">¿Estás seguro?</p>
+              <p className="text-xs text-[#71717a] mt-0.5">¿Realmente deseas cerrar tu sesión actual?</p>
+            </div>
+          </div>
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#27272a]">
+            <button
+              onClick={() => setIsLogoutConfirmOpen(false)}
+              className="inline-flex items-center justify-center gap-2 bg-[#18181b] hover:bg-[#1e1e22] text-[#a1a1aa] hover:text-[#fafafa] text-sm font-medium px-4 py-2.5 rounded-xl border border-[#27272a] transition-all cursor-pointer"
+            >
+              No
+            </button>
+            <button
+              onClick={() => {
+                setIsLogoutConfirmOpen(false)
+                onLogout()
+              }}
+              className="inline-flex items-center justify-center gap-2 bg-[#ef4444] hover:bg-[#dc2626] text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-all cursor-pointer"
+            >
+              Sí, salir
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   )

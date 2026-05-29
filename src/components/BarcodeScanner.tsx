@@ -103,7 +103,7 @@ export function BarcodeScanner({
               {title}
             </h2>
             <p className="text-[10px] text-[#71717a] font-mono">
-              QR · EAN · Code128 · PDF417 · más
+              QR · Código de Barras
             </p>
           </div>
         </div>

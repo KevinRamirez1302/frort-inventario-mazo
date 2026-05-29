@@ -63,6 +63,8 @@
   --font-mono: 'JetBrains Mono', monospace;
   --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
 
+  --breakpoint-xs: 480px;
+
   --color-bg-base: var(--bg-base);
   --color-bg-surface: var(--bg-surface);
   --color-bg-elevated: var(--bg-elevated);

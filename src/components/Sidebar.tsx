@@ -135,7 +135,7 @@ export function Sidebar({ activeTab, onTabChange, profile, onSettingsClick, role
       </aside>
 
       {/* Mobile bottom nav */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#18181b]/85 backdrop-blur-xl border-t border-[#27272a]/60" role="navigation" aria-label="Navegación móvil">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#18181b]/85 backdrop-blur-xl border-t border-[#27272a]/60" role="navigation" aria-label="Navegación móvil" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         <div className="flex items-center justify-around py-2 px-1">
           {visibleTabs.map(tab => {
             const isActive = activeTab === tab.key

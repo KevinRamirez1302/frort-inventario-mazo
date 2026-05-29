@@ -75,8 +75,8 @@ export function Dashboard({ productos, categorias, usuarios, movimientos, presta
     <div className="space-y-8 animate-fade-up">
       {/* Page header */}
       <div>
-        <h1 className="text-3xl font-bold text-[#fafafa] tracking-tight" style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>Panel de Control</h1>
-        <p className="text-[#71717a] mt-1.5">Resumen del inventario</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-[#fafafa] tracking-tight" style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>Panel de Control</h1>
+        <p className="text-[#71717a] mt-1.5 text-sm">Resumen del inventario</p>
       </div>
 
       {/* Stats grid */}
@@ -214,32 +214,32 @@ export function Dashboard({ productos, categorias, usuarios, movimientos, presta
           <table className="w-full text-sm">
             <thead>
               <tr className="text-[#71717a] text-xs font-mono uppercase tracking-wider">
-                <th className="text-left py-3 px-6">Tipo</th>
-                <th className="text-left py-3 px-6">Producto</th>
-                <th className="text-left py-3 px-6">Usuario</th>
-                <th className="text-left py-3 px-6">Fecha</th>
-                <th className="text-left py-3 px-6 hidden md:table-cell">Observaciones</th>
+                <th className="text-left py-3 px-4 sm:px-6">Tipo</th>
+                <th className="text-left py-3 px-4 sm:px-6">Producto</th>
+                <th className="text-left py-3 px-4 sm:px-6 hidden sm:table-cell">Usuario</th>
+                <th className="text-left py-3 px-4 sm:px-6 hidden xs:table-cell">Fecha</th>
+                <th className="text-left py-3 px-4 sm:px-6 hidden md:table-cell">Observaciones</th>
               </tr>
             </thead>
             <tbody>
               {recentMovs.map(m => (
                 <tr key={m.id} className="border-t border-[#27272a]/40 table-row-hover">
-                  <td className="py-3 px-6">
+                  <td className="py-3 px-4 sm:px-6">
                     <span className={twMerge(TIPO_COLORS[m.tipo])}>
                       {TIPO_ICONS[m.tipo]}
                       <span className="capitalize">{m.tipo}</span>
                     </span>
                   </td>
-                  <td className="py-3 px-6 text-[#a1a1aa]">
+                  <td className="py-3 px-4 sm:px-6 text-[#a1a1aa] max-w-[120px] sm:max-w-none truncate">
                     {m.producto?.nombre || <span className="text-[#71717a] font-mono">#{m.productoId}</span>}
                   </td>
-                  <td className="py-3 px-6 text-[#a1a1aa]">
+                  <td className="py-3 px-4 sm:px-6 text-[#a1a1aa] hidden sm:table-cell">
                     {m.usuario?.nombre || <span className="text-[#71717a] font-mono">#{m.usuarioId}</span>}
                   </td>
-                  <td className="py-3 px-6 text-[#71717a] font-mono text-xs">
+                  <td className="py-3 px-4 sm:px-6 text-[#71717a] font-mono text-xs hidden xs:table-cell">
                     {new Date(m.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </td>
-                  <td className="py-3 px-6 text-[#71717a] text-xs hidden md:table-cell max-w-[240px] truncate">
+                  <td className="py-3 px-4 sm:px-6 text-[#71717a] text-xs hidden md:table-cell max-w-[240px] truncate">
                     {m.observaciones || '—'}
                   </td>
                 </tr>
