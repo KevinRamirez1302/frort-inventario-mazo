@@ -50,6 +50,21 @@ export function MovimientosPage() {
       onCreate={handleCreate}
       onUpdate={handleUpdate}
       onDelete={handleDelete}
+      exportFilename="inventario_movimientos"
+      exportColumns={[
+        { key: 'id',           label: 'ID' },
+        { key: 'tipo',         label: 'Tipo',      format: v => String(v) },
+        { key: 'producto',     label: 'Producto',  format: (_v, row) => {
+          const p = row.producto as { nombre?: string } | null | undefined
+          return p?.nombre ?? `#${row.productoId}`
+        }},
+        { key: 'usuario',      label: 'Usuario',   format: (_v, row) => {
+          const u = row.usuario as { nombre?: string } | null | undefined
+          return u?.nombre ?? '—'
+        }},
+        { key: 'fecha',        label: 'Fecha',     format: v => new Date(String(v)).toLocaleString('es-ES') },
+        { key: 'observaciones',label: 'Observaciones', format: v => v ? String(v) : '—' },
+      ]}
       columns={[
         { key: 'tipo', label: 'Tipo', render: m => (
           <span className={twMerge(TIPO_BADGE[m.tipo])}>

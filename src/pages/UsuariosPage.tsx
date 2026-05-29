@@ -31,21 +31,27 @@ export function UsuariosPage() {
       onUpdate={handleUpdate}
       onDelete={handleDelete}
       columns={[
-        { key: 'nombre', label: 'Nombre', render: u => (
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7c3aed]/30 to-[#3b82f6]/30 flex items-center justify-center text-xs font-bold text-[#fafafa] flex-shrink-0">
-              {u.nombre.charAt(0).toUpperCase()}
+        {
+          key: 'nombre', label: 'Nombre', render: u => (
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7c3aed]/30 to-[#3b82f6]/30 flex items-center justify-center text-xs font-bold text-[#fafafa] flex-shrink-0">
+                {u.nombre.charAt(0).toUpperCase()}
+              </div>
+              <span className="font-medium text-[#fafafa]">{u.nombre}</span>
             </div>
-            <span className="font-medium text-[#fafafa]">{u.nombre}</span>
-          </div>
-        )},
-        { key: 'email', label: 'Email', render: u => (
-          <span className="font-mono text-xs text-[#71717a]">{u.email}</span>
-        )},
+          )
+        },
+        {
+          key: 'email', label: 'Email', render: u => (
+            <span className="font-mono text-xs text-[#71717a]">{u.email}</span>
+          )
+        },
         { key: 'departamento', label: 'Departamento' },
-        { key: 'telefono', label: 'Teléfono', render: u => (
-          u.telefono ? <span className="font-mono text-xs text-[#71717a]">{u.telefono}</span> : <span className="text-[#71717a] text-xs">—</span>
-        )},
+        {
+          key: 'telefono', label: 'Teléfono', render: u => (
+            u.telefono ? <span className="font-mono text-xs text-[#71717a]">{u.telefono}</span> : <span className="text-[#71717a] text-xs">—</span>
+          )
+        },
       ]}
       formFields={[
         { key: 'nombre', label: 'Nombre', required: true },

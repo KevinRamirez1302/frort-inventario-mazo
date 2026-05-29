@@ -8,6 +8,8 @@ import { twMerge } from 'tailwind-merge'
 import { Modal } from './Modal'
 import { useToast } from '../hooks/useToast'
 import { useScanner } from '../hooks/useScanner'
+import { ExportMenu } from './ExportMenu'
+import type { ExportColumn } from '../utils/exportUtils'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -45,6 +47,14 @@ interface DataTableProps<T extends { id: number }> {
   onDelete: (id: number) => Promise<void>
   onRefresh: () => void
   formFields: FormField[]
+  /** Columnas de exportación (si no se pasan, se usan las columnas visibles) */
+  exportColumns?: ExportColumn[]
+  /** Nombre base del archivo exportado (sin extensión) */
+  exportFilename?: string
+  initialSearch?: string
+  onSearchChange?: (val: string) => void
+  initialNewProductData?: Record<string, unknown> | null
+  onClearNewProductData?: () => void
 }
 
 // ---------------------------------------------------------------------------
@@ -361,14 +371,43 @@ function ScannerPanel({ onResult, onClose }: ScannerPanelProps) {
 export function DataTable<T extends { id: number }>({
   title, subtitle, columns, data, loading, error,
   onCreate, onUpdate, onDelete, onRefresh, formFields,
+  exportColumns, exportFilename,
+  initialSearch, onSearchChange,
+  initialNewProductData, onClearNewProductData,
 }: DataTableProps<T>) {
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(initialSearch || '')
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<T | null>(null)
   const [formData, setFormData] = useState<Record<string, unknown>>({})
   const [submitting, setSubmitting] = useState(false)
   const [isScannerOpen, setIsScannerOpen] = useState(false)
   const { addToast } = useToast()
+
+  // Sync external search updates
+  useEffect(() => {
+    if (initialSearch !== undefined) {
+      setSearch(initialSearch)
+    }
+  }, [initialSearch])
+
+  // Sync pre-populated form data from global scanner
+  useEffect(() => {
+    if (initialNewProductData) {
+      setEditing(null)
+      setFormData(initialNewProductData)
+      setModalOpen(true)
+      if (onClearNewProductData) {
+        onClearNewProductData()
+      }
+    }
+  }, [initialNewProductData, onClearNewProductData])
+
+  const handleSearchChange = (val: string) => {
+    setSearch(val)
+    if (onSearchChange) {
+      onSearchChange(val)
+    }
+  }
 
   const filtered = useMemo(() => {
     if (!search.trim()) return data
@@ -434,6 +473,18 @@ export function DataTable<T extends { id: number }>({
     addToast(`Escáner: campos rellenados → ${filled}`, 'success')
   }, [formFields, addToast])
 
+  // Columnas para exportar: usa exportColumns si se proveen, si no deriva de columns
+  const resolvedExportColumns = useMemo<ExportColumn[]>(() => {
+    if (exportColumns && exportColumns.length > 0) return exportColumns
+    return columns.map(col => ({ key: col.key, label: col.label }))
+  }, [exportColumns, columns])
+
+  // Data plana para exportar
+  const exportData = useMemo(
+    () => filtered.map(item => item as Record<string, unknown>),
+    [filtered],
+  )
+
   return (
     <div className="space-y-6 animate-fade-up">
       {/* Header */}
@@ -446,6 +497,14 @@ export function DataTable<T extends { id: number }>({
           <button onClick={onRefresh} className={BTN_SECONDARY} aria-label="Refrescar datos">
             <Loader2 size={16} className={twMerge('transition-transform', loading && 'animate-spin')} />
           </button>
+          <ExportMenu
+            title={title}
+            subtitle={subtitle}
+            filename={exportFilename ?? title.toLowerCase().replace(/\s+/g, '_')}
+            columns={resolvedExportColumns}
+            data={exportData}
+            disabled={loading}
+          />
           <button onClick={openCreate} className={BTN_PRIMARY}>
             <Plus size={16} />
             Nuevo
@@ -460,7 +519,7 @@ export function DataTable<T extends { id: number }>({
           type="text"
           placeholder="Buscar registros..."
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={e => handleSearchChange(e.target.value)}
           className={twMerge(INPUT_CLS, 'pl-10 w-full sm:w-80')}
           aria-label="Buscar registros"
         />

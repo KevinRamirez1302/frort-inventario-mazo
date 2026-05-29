@@ -12,7 +12,17 @@ const ESTADO_BADGE: Record<string, string> = {
   baja: 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border bg-[#ef4444]/10 text-[#ef4444] border-[#ef4444]/20',
 }
 
-export function ProductosPage() {
+export function ProductosPage({
+  initialSearch,
+  onSearchChange,
+  initialNewProductData,
+  onClearNewProductData,
+}: {
+  initialSearch?: string
+  onSearchChange?: (val: string) => void
+  initialNewProductData?: Record<string, unknown> | null
+  onClearNewProductData?: () => void
+}) {
   const { data: productos, loading, error, refetch } = useFetch(productosApi.getAll, [], [])
   const { data: categorias } = useFetch(categoriasApi.getAll, [], [])
 
@@ -39,6 +49,28 @@ export function ProductosPage() {
       onCreate={handleCreate}
       onUpdate={handleUpdate}
       onDelete={handleDelete}
+      exportFilename="inventario_productos"
+      initialSearch={initialSearch}
+      onSearchChange={onSearchChange}
+      initialNewProductData={initialNewProductData}
+      onClearNewProductData={onClearNewProductData}
+      exportColumns={[
+        { key: 'id',              label: 'ID' },
+        { key: 'nombre',          label: 'Nombre' },
+        { key: 'descripcion',     label: 'Descripción', format: v => v ? String(v) : '—' },
+        { key: 'marca',           label: 'Marca',       format: v => v ? String(v) : '—' },
+        { key: 'modelo',          label: 'Modelo',      format: v => v ? String(v) : '—' },
+        { key: 'numeroSerie',     label: 'Nº Serie',    format: v => v ? String(v) : '—' },
+        { key: 'estado',          label: 'Estado',      format: v => String(v).replace(/_/g, ' ') },
+        { key: 'ubicacion',       label: 'Ubicación',   format: v => v ? String(v) : '—' },
+        { key: 'precio',          label: 'Precio (€)',  format: v => v !== null && v !== undefined ? String(v) : '—' },
+        { key: 'fechaAdquisicion',label: 'Fecha Adq.',  format: v => v ? new Date(String(v)).toLocaleDateString('es-ES') : '—' },
+        { key: 'categoria',       label: 'Categoría',   format: (_v, row) => {
+          const cat = row.categoria as { nombre?: string } | null | undefined
+          return cat?.nombre ?? '—'
+        }},
+        { key: 'createdAt',       label: 'Creado',      format: v => new Date(String(v)).toLocaleDateString('es-ES') },
+      ]}
       columns={[
         { key: 'nombre', label: 'Nombre', render: p => (
           <div>
@@ -76,7 +108,7 @@ export function ProductosPage() {
         ]},
         { key: 'ubicacion', label: 'Ubicación' },
         { key: 'precio', label: 'Precio (€)', type: 'number' },
-        { key: 'fechaAdquisicion', label: 'Fecha Adquisición', type: 'date' },
+        { key: 'fechaAdquisicion', label: 'Fecha Adquisition', type: 'date' },
         { key: 'categoriaId', label: 'Categoría', options: categorias.map(c => ({ value: String(c.id), label: c.nombre })) },
       ]}
     />

@@ -29,9 +29,19 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
       setIsLoading(false)
       // Check credentials dynamically
       const savedPassword = localStorage.getItem('adminPassword') || 'admin'
+      const isUsernameAdmin = username.toLowerCase() === 'admin'
       
-      if (username.toLowerCase() === 'admin' && password === savedPassword) {
-        addToast('Sesión iniciada correctamente.', 'success')
+      if (isUsernameAdmin && password === savedPassword) {
+        localStorage.setItem('userRole', 'admin')
+        localStorage.setItem('adminNombre', 'Admin')
+        localStorage.setItem('adminEmail', 'admin@instituto.es')
+        addToast('Sesión de administrador iniciada.', 'success')
+        onLoginSuccess()
+      } else if (!isUsernameAdmin && (password === 'user' || password === '1234')) {
+        localStorage.setItem('userRole', 'user')
+        localStorage.setItem('adminNombre', username.charAt(0).toUpperCase() + username.slice(1))
+        localStorage.setItem('adminEmail', `${username.toLowerCase()}@instituto.es`)
+        addToast(`Sesión de usuario iniciada como ${username}.`, 'success')
         onLoginSuccess()
       } else {
         addToast('Usuario o contraseña incorrectos.', 'error')

@@ -1,7 +1,13 @@
 import { useMemo } from 'react'
-import { Package, CheckCircle2, Users, HandCoins, ArrowUpRight, ArrowDownRight, Wrench, Ban } from 'lucide-react'
+import { CheckCircle2, Users, ArrowUpRight, ArrowDownRight, Wrench, Ban } from 'lucide-react'
 import { twMerge } from 'tailwind-merge'
 import type { Producto, Categoria, Usuario, Movimiento, Prestamo } from '../types/inventory'
+
+// Import custom PNG assets for dashboard cards
+import iconInventario from '../assets/inventario.png'
+import iconComprobado from '../assets/comprobado.png'
+import iconUsuario from '../assets/usuario.png'
+import iconPrestado from '../assets/pedir-prestado.png'
 
 interface DashboardProps {
   productos: Producto[]
@@ -9,6 +15,7 @@ interface DashboardProps {
   usuarios: Usuario[]
   movimientos: Movimiento[]
   prestamos: Prestamo[]
+  role?: string
 }
 
 const ESTADO_CONFIG: { key: string; label: string; color: string; icon: React.ReactNode }[] = [
@@ -41,7 +48,8 @@ const TIPO_ICONS: Record<string, React.ReactNode> = {
   mantenimiento: <Wrench size={12} />,
 }
 
-export function Dashboard({ productos, categorias, usuarios, movimientos, prestamos }: DashboardProps) {
+export function Dashboard({ productos, categorias, usuarios, movimientos, prestamos, role = 'admin' }: DashboardProps) {
+  const isAdmin = role === 'admin'
   const disponibles = productos.filter(p => p.estado === 'disponible').length
   const asignados = productos.filter(p => p.estado === 'asignado').length
   const prestamosActivos = prestamos.filter(p => p.estado === 'activo').length
@@ -68,7 +76,7 @@ export function Dashboard({ productos, categorias, usuarios, movimientos, presta
       {/* Page header */}
       <div>
         <h1 className="text-3xl font-bold text-[#fafafa] tracking-tight" style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>Panel de Control</h1>
-        <p className="text-[#71717a] mt-1.5">Resumen del inventario del departamento de informática</p>
+        <p className="text-[#71717a] mt-1.5">Resumen del inventario</p>
       </div>
 
       {/* Stats grid */}
@@ -76,35 +84,38 @@ export function Dashboard({ productos, categorias, usuarios, movimientos, presta
         <StatCard
           label="Total Productos"
           value={productos.length}
-          icon={<Package size={20} />}
+          icon={<img src={iconInventario} alt="" className="w-5 h-5 object-contain" />}
           accent="from-[#7c3aed]/20 to-[#7c3aed]/5"
-          accentIcon="text-[#7c3aed]"
+          accentIcon=""
         />
         <StatCard
           label="Disponibles"
           value={disponibles}
-          icon={<CheckCircle2 size={20} />}
+          icon={<img src={iconComprobado} alt="" className="w-5 h-5 object-contain" />}
           accent="from-[#10b981]/20 to-[#10b981]/5"
-          accentIcon="text-[#10b981]"
+          accentIcon=""
         />
         <StatCard
           label="Asignados"
           value={asignados}
-          icon={<Users size={20} />}
+          icon={<img src={iconUsuario} alt="" className="w-5 h-5 object-contain" />}
           accent="from-[#3b82f6]/20 to-[#3b82f6]/5"
-          accentIcon="text-[#3b82f6]"
+          accentIcon=""
         />
         <StatCard
           label="Préstamos Activos"
           value={prestamosActivos}
-          icon={<HandCoins size={20} />}
+          icon={<img src={iconPrestado} alt="" className="w-5 h-5 object-contain" />}
           accent="from-[#f59e0b]/20 to-[#f59e0b]/5"
-          accentIcon="text-[#f59e0b]"
+          accentIcon=""
         />
       </div>
 
       {/* Main grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 stagger-children">
+      <div className={twMerge(
+        'grid grid-cols-1 gap-6 stagger-children',
+        isAdmin ? 'xl:grid-cols-3' : 'xl:grid-cols-2'
+      )}>
         {/* Estado breakdown */}
         <div className="bg-[#111114] border border-[#27272a] rounded-2xl p-6 card-hover">
           <h3 className="text-sm font-semibold text-[#fafafa] mb-5" style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>Estado del Inventario</h3>
@@ -158,38 +169,40 @@ export function Dashboard({ productos, categorias, usuarios, movimientos, presta
         </div>
 
         {/* Users with loans */}
-        <div className="bg-[#111114] border border-[#27272a] rounded-2xl p-6 card-hover">
-          <h3 className="text-sm font-semibold text-[#fafafa] mb-5" style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>Usuarios con Préstamos</h3>
-          <div className="space-y-3">
-            {usuarios
-              .map(u => ({
-                ...u,
-                activeLoans: prestamos.filter(p => p.usuarioId === u.id && p.estado === 'activo').length,
-              }))
-              .filter(u => u.activeLoans > 0)
-              .sort((a, b) => b.activeLoans - a.activeLoans)
-              .slice(0, 6)
-              .map(u => (
-                <div key={u.id} className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7c3aed]/30 to-[#3b82f6]/30 flex items-center justify-center text-xs font-bold text-[#fafafa] flex-shrink-0">
-                    {u.nombre.charAt(0).toUpperCase()}
+        {isAdmin && (
+          <div className="bg-[#111114] border border-[#27272a] rounded-2xl p-6 card-hover">
+            <h3 className="text-sm font-semibold text-[#fafafa] mb-5" style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>Usuarios con Préstamos</h3>
+            <div className="space-y-3">
+              {usuarios
+                .map(u => ({
+                  ...u,
+                  activeLoans: prestamos.filter(p => p.usuarioId === u.id && p.estado === 'activo').length,
+                }))
+                .filter(u => u.activeLoans > 0)
+                .sort((a, b) => b.activeLoans - a.activeLoans)
+                .slice(0, 6)
+                .map(u => (
+                  <div key={u.id} className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7c3aed]/30 to-[#3b82f6]/30 flex items-center justify-center text-xs font-bold text-[#fafafa] flex-shrink-0">
+                      {u.nombre.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-[#a1a1aa] truncate">{u.nombre}</p>
+                      {u.departamento && (
+                        <p className="text-xs text-[#71717a]">{u.departamento}</p>
+                      )}
+                    </div>
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border bg-[#7c3aed]/10 text-[#7c3aed] border-[#7c3aed]/20">
+                      {u.activeLoans}
+                    </span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-[#a1a1aa] truncate">{u.nombre}</p>
-                    {u.departamento && (
-                      <p className="text-xs text-[#71717a]">{u.departamento}</p>
-                    )}
-                  </div>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border bg-[#7c3aed]/10 text-[#7c3aed] border-[#7c3aed]/20">
-                    {u.activeLoans}
-                  </span>
-                </div>
-              ))}
-            {usuarios.filter(u => prestamos.some(p => p.usuarioId === u.id && p.estado === 'activo')).length === 0 && (
-              <p className="text-[#71717a] text-xs text-center py-4">Sin préstamos activos</p>
-            )}
+                ))}
+              {usuarios.filter(u => prestamos.some(p => p.usuarioId === u.id && p.estado === 'activo')).length === 0 && (
+                <p className="text-[#71717a] text-xs text-center py-4">Sin préstamos activos</p>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Recent movements */}

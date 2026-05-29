@@ -9,10 +9,13 @@ import { MovimientosPage } from './pages/MovimientosPage'
 import { PrestamosPage } from './pages/PrestamosPage'
 import { useFetch } from './hooks/useFetch'
 import { productosApi, categoriasApi, usuariosApi, movimientosApi, prestamosApi } from './api/inventory'
-import { Sun, Moon, LogOut, Settings, ScanLine } from 'lucide-react'
+import { Sun, Moon, LogOut, ScanLine, Check, AlertTriangle, Eye, Plus } from 'lucide-react'
 import { LoginPage } from './pages/LoginPage'
 import { SettingsModal } from './components/SettingsModal'
-import { useToast } from './hooks/useToast'
+import { NotFoundPage } from './pages/NotFoundPage'
+import { Modal } from './components/Modal'
+import type { Producto } from './types/inventory'
+import { twMerge } from 'tailwind-merge'
 
 // Carga diferida (lazy) del escáner para no aumentar el bundle principal
 // ZXing añade ~500KB — se descarga solo cuando el usuario abre el escáner
@@ -32,6 +35,9 @@ function AppContent({ onLogout }: AppContentProps) {
     return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
   })
 
+  // User role state
+  const [role] = useState(() => localStorage.getItem('userRole') || 'admin')
+
   // Profile data & Settings Modal state
   const [profile, setProfile] = useState(() => {
     const savedName = localStorage.getItem('adminNombre') || 'Admin'
@@ -41,11 +47,28 @@ function AppContent({ onLogout }: AppContentProps) {
   })
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isScannerOpen, setIsScannerOpen] = useState(false)
-  const { addToast } = useToast()
 
-  const handleScanSuccess = (text: string, format: string) => {
-    addToast(`✅ Código leído (${format}): ${text}`, 'success')
+  // Scanner search states
+  const [lastScannedCode, setLastScannedCode] = useState<string | null>(null)
+  const [lastScannedProduct, setLastScannedProduct] = useState<Producto | null>(null)
+  const [isScanResultOpen, setIsScanResultOpen] = useState(false)
+  const [productSearchQuery, setProductSearchQuery] = useState('')
+  const [initialNewProductData, setInitialNewProductData] = useState<Record<string, unknown> | null>(null)
+
+  const handleScanSuccess = (text: string, _format: string) => {
     setIsScannerOpen(false)
+    const scannedCode = text.trim()
+    setLastScannedCode(scannedCode)
+    
+    // Buscar en productos guardados
+    const found = productos.find(p => 
+      (p.numeroSerie && p.numeroSerie.trim().toLowerCase() === scannedCode.toLowerCase()) ||
+      String(p.id) === scannedCode ||
+      (p.nombre && p.nombre.trim().toLowerCase() === scannedCode.toLowerCase())
+    )
+    
+    setLastScannedProduct(found || null)
+    setIsScanResultOpen(true)
   }
 
   useEffect(() => {
@@ -62,6 +85,18 @@ function AppContent({ onLogout }: AppContentProps) {
     setTheme(prev => prev === 'light' ? 'dark' : 'light')
   }
 
+  const handleTabChange = (tab: TabKey) => {
+    if (tab !== 'productos') {
+      setProductSearchQuery('')
+      setInitialNewProductData(null)
+    }
+    if (tab === 'usuarios' && role !== 'admin') {
+      setActiveTab('404')
+    } else {
+      setActiveTab(tab)
+    }
+  }
+
   const { data: productos, loading: loadingProd } = useFetch(productosApi.getAll, [], [])
   const { data: categorias } = useFetch(categoriasApi.getAll, [], [])
   const { data: usuarios } = useFetch(usuariosApi.getAll, [], [])
@@ -72,8 +107,10 @@ function AppContent({ onLogout }: AppContentProps) {
     <div className="bg-gradient-mesh flex min-h-screen relative">
       <Sidebar
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
         profile={profile}
+        onSettingsClick={() => setIsSettingsOpen(true)}
+        role={role}
       />
 
       <main className="flex-1 p-4 lg:p-8 pt-16 lg:pt-20 pb-28 lg:pb-8 overflow-y-auto max-w-[1600px] relative">
@@ -89,14 +126,6 @@ function AppContent({ onLogout }: AppContentProps) {
             ) : (
               <Sun size={20} className="transition-transform duration-300 text-[#f59e0b]" />
             )}
-          </button>
-
-          <button
-            onClick={() => setIsSettingsOpen(true)}
-            className="p-3 rounded-xl border border-border-subtle bg-bg-surface/70 backdrop-blur-md text-text-secondary hover:text-text-primary hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg cursor-pointer flex items-center justify-center"
-            title="Ajustes de perfil"
-          >
-            <Settings size={20} />
           </button>
 
           <button
@@ -132,13 +161,22 @@ function AppContent({ onLogout }: AppContentProps) {
                 usuarios={usuarios}
                 movimientos={movimientos}
                 prestamos={prestamos}
+                role={role}
               />
             )}
-            {activeTab === 'productos' && <ProductosPage />}
+            {activeTab === 'productos' && (
+              <ProductosPage
+                initialSearch={productSearchQuery}
+                onSearchChange={setProductSearchQuery}
+                initialNewProductData={initialNewProductData}
+                onClearNewProductData={() => setInitialNewProductData(null)}
+              />
+            )}
             {activeTab === 'categorias' && <CategoriasPage />}
-            {activeTab === 'usuarios' && <UsuariosPage />}
+            {activeTab === 'usuarios' && role === 'admin' && <UsuariosPage />}
             {activeTab === 'movimientos' && <MovimientosPage />}
             {activeTab === 'prestamos' && <PrestamosPage />}
+            {activeTab === '404' && <NotFoundPage onGoBack={() => setActiveTab('dashboard')} />}
           </>
         )}
       </main>
@@ -174,14 +212,165 @@ function AppContent({ onLogout }: AppContentProps) {
           </div>
         </div>
       )}
+
+      {/* Scan Result Modal */}
+      <Modal
+        open={isScanResultOpen}
+        onClose={() => setIsScanResultOpen(false)}
+        title={lastScannedProduct ? "Producto Encontrado" : "Código Escaneado"}
+        size="md"
+      >
+        {lastScannedProduct ? (
+          <div className="space-y-6">
+            {/* Header box with green accent */}
+            <div className="flex items-center gap-4 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
+                <Check size={20} />
+              </div>
+              <div>
+                <p className="font-bold text-sm">¡Coincidencia Encontrada!</p>
+                <p className="text-xs text-[#71717a]">Este código corresponde a un producto registrado en el sistema.</p>
+              </div>
+            </div>
+
+            {/* Product Details Grid */}
+            <div className="bg-[#18181b]/55 border border-[#27272a] rounded-2xl p-5 space-y-4">
+              <div className="border-b border-[#27272a]/60 pb-3">
+                <p className="text-[10px] text-[#71717a] font-mono uppercase tracking-wider">Nombre del Producto</p>
+                <p className="text-lg font-bold text-[#fafafa] mt-0.5">{lastScannedProduct.nombre}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[10px] text-[#71717a] font-mono uppercase tracking-wider">Estado</p>
+                  <span className={twMerge("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border mt-1.5 capitalize", 
+                    lastScannedProduct.estado === 'disponible' && 'bg-[#10b981]/10 text-[#10b981] border-[#10b981]/20',
+                    lastScannedProduct.estado === 'asignado' && 'bg-[#3b82f6]/10 text-[#3b82f6] border-[#3b82f6]/20',
+                    lastScannedProduct.estado === 'en_mantenimiento' && 'bg-[#f59e0b]/10 text-[#f59e0b] border-[#f59e0b]/20',
+                    lastScannedProduct.estado === 'baja' && 'bg-[#ef4444]/10 text-[#ef4444] border-[#ef4444]/20'
+                  )}>
+                    {lastScannedProduct.estado.replace(/_/g, ' ')}
+                  </span>
+                </div>
+
+                <div>
+                  <p className="text-[10px] text-[#71717a] font-mono uppercase tracking-wider">Categoría</p>
+                  <p className="text-sm font-medium text-[#a1a1aa] mt-1">{lastScannedProduct.categoria?.nombre || '—'}</p>
+                </div>
+
+                <div>
+                  <p className="text-[10px] text-[#71717a] font-mono uppercase tracking-wider">Marca / Modelo</p>
+                  <p className="text-sm font-medium text-[#a1a1aa] mt-1">
+                    {[lastScannedProduct.marca, lastScannedProduct.modelo].filter(Boolean).join(' ') || '—'}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-[10px] text-[#71717a] font-mono uppercase tracking-wider">Número de Serie</p>
+                  <p className="text-xs font-mono text-emerald-400 mt-1 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 w-fit">
+                    {lastScannedProduct.numeroSerie || '—'}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-[10px] text-[#71717a] font-mono uppercase tracking-wider">Ubicación</p>
+                  <p className="text-sm font-medium text-[#a1a1aa] mt-1">{lastScannedProduct.ubicacion || '—'}</p>
+                </div>
+
+                <div>
+                  <p className="text-[10px] text-[#71717a] font-mono uppercase tracking-wider">Precio (€)</p>
+                  <p className="text-sm font-medium text-[#a1a1aa] mt-1">
+                    {lastScannedProduct.precio !== null && lastScannedProduct.precio !== undefined ? `${lastScannedProduct.precio} €` : '—'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#27272a]">
+              <button
+                onClick={() => setIsScanResultOpen(false)}
+                className="inline-flex items-center justify-center gap-2 bg-[#18181b] hover:bg-[#1e1e22] text-[#a1a1aa] hover:text-[#fafafa] text-sm font-medium px-4 py-2.5 rounded-xl border border-[#27272a] transition-all cursor-pointer"
+              >
+                Cerrar
+              </button>
+              <button
+                onClick={() => {
+                  setIsScanResultOpen(false)
+                  setProductSearchQuery(lastScannedProduct.numeroSerie || lastScannedProduct.nombre)
+                  setActiveTab('productos')
+                }}
+                className="inline-flex items-center justify-center gap-2 bg-[#7c3aed] hover:bg-[#6d28d9] text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-all cursor-pointer"
+              >
+                <Eye size={15} />
+                Ver en Inventario
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Header box with orange accent */}
+            <div className="flex items-center gap-4 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle size={20} />
+              </div>
+              <div>
+                <p className="font-bold text-sm">Producto No Encontrado</p>
+                <p className="text-xs text-[#71717a]">El código escaneado no coincide con ningún producto registrado.</p>
+              </div>
+            </div>
+
+            {/* Code Scanned Box */}
+            <div className="bg-[#18181b]/55 border border-[#27272a] rounded-2xl p-5 space-y-2">
+              <p className="text-[10px] text-[#71717a] font-mono uppercase tracking-wider">Código Escaneado</p>
+              <p className="text-lg font-mono font-bold text-[#fafafa] break-all bg-black/35 px-4 py-2.5 rounded-xl border border-[#27272a]">
+                {lastScannedCode}
+              </p>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-between pt-4 border-t border-[#27272a]">
+              <button
+                onClick={() => {
+                  setIsScanResultOpen(false)
+                  setProductSearchQuery(lastScannedCode || '')
+                  setActiveTab('productos')
+                }}
+                className="inline-flex items-center justify-center gap-2 bg-[#18181b] hover:bg-[#1e1e22] text-[#a1a1aa] hover:text-[#fafafa] text-sm font-medium px-4 py-2.5 rounded-xl border border-[#27272a] transition-all cursor-pointer"
+              >
+                Buscar en Inventario
+              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsScanResultOpen(false)}
+                  className="inline-flex items-center justify-center gap-2 bg-[#18181b] hover:bg-[#1e1e22] text-[#a1a1aa] hover:text-[#fafafa] text-sm font-medium px-4 py-2.5 rounded-xl border border-[#27272a] transition-all cursor-pointer"
+                >
+                  Cerrar
+                </button>
+                {role === 'admin' && (
+                  <button
+                    onClick={() => {
+                      setIsScanResultOpen(false)
+                      setInitialNewProductData({ numeroSerie: lastScannedCode })
+                      setActiveTab('productos')
+                    }}
+                    className="inline-flex items-center justify-center gap-2 bg-[#7c3aed] hover:bg-[#6d28d9] text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-all cursor-pointer"
+                  >
+                    <Plus size={15} />
+                    Registrar Producto
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return localStorage.getItem('isAuthenticated') === 'true'
-  })
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
 
   const handleLoginSuccess = () => {
     localStorage.setItem('isAuthenticated', 'true')
@@ -190,6 +379,9 @@ export default function App() {
 
   const handleLogout = () => {
     localStorage.removeItem('isAuthenticated')
+    localStorage.removeItem('userRole')
+    localStorage.removeItem('adminNombre')
+    localStorage.removeItem('adminEmail')
     setIsAuthenticated(false)
   }
 

@@ -39,6 +39,22 @@ export function PrestamosPage() {
       onCreate={handleCreate}
       onUpdate={handleUpdate}
       onDelete={handleDelete}
+      exportFilename="inventario_prestamos"
+      exportColumns={[
+        { key: 'id',              label: 'ID' },
+        { key: 'producto',        label: 'Producto',      format: (_v, row) => {
+          const p = row.producto as { nombre?: string } | null | undefined
+          return p?.nombre ?? `#${row.productoId}`
+        }},
+        { key: 'usuario',         label: 'Usuario',       format: (_v, row) => {
+          const u = row.usuario as { nombre?: string } | null | undefined
+          return u?.nombre ?? `#${row.usuarioId}`
+        }},
+        { key: 'fechaPrestamo',   label: 'Fecha Préstamo',   format: v => new Date(String(v)).toLocaleDateString('es-ES') },
+        { key: 'fechaDevolucion', label: 'Fecha Devolución',  format: v => v ? new Date(String(v)).toLocaleDateString('es-ES') : 'Pendiente' },
+        { key: 'estado',          label: 'Estado' },
+        { key: 'observaciones',   label: 'Observaciones',  format: v => v ? String(v) : '—' },
+      ]}
       columns={[
         { key: 'producto', label: 'Producto', render: p => (
           <span className="font-medium text-[#fafafa]">{p.producto?.nombre || `#${p.productoId}`}</span>
