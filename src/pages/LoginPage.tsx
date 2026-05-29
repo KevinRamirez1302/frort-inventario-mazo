@@ -30,7 +30,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
       localStorage.setItem('token', token)
       localStorage.setItem('user', JSON.stringify(usuario))
       addToast(`Bienvenido, ${usuario.nombre}.`, 'success')
-      onLoginSuccess(token, usuario)
+      onLoginSuccess(token, { ...usuario, fotoPerfil: usuario.fotoPerfil || undefined })
     } catch (err) {
       addToast(err instanceof Error ? err.message : 'Error al iniciar sesión.', 'error')
     } finally {
