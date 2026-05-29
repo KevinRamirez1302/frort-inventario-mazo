@@ -37,7 +37,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
         localStorage.setItem('adminEmail', 'admin@instituto.es')
         addToast('Sesión de administrador iniciada.', 'success')
         onLoginSuccess()
-      } else if (!isUsernameAdmin && (password === 'user' || password === '1234')) {
+      } else if (!isUsernameAdmin && (password === 'user' || password === '1234' || password.toLowerCase() === username.toLowerCase())) {
         localStorage.setItem('userRole', 'user')
         localStorage.setItem('adminNombre', username.charAt(0).toUpperCase() + username.slice(1))
         localStorage.setItem('adminEmail', `${username.toLowerCase()}@instituto.es`)

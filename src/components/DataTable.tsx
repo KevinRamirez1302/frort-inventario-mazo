@@ -441,21 +441,23 @@ export function DataTable<T extends { id: number }>({
         addToast('Registro creado correctamente', 'success')
       }
       setModalOpen(false)
+      onRefresh()
     } catch (err) {
       addToast((err as Error).message, 'error')
     } finally {
       setSubmitting(false)
     }
-  }, [editing, formData, onCreate, onUpdate, addToast])
+  }, [editing, formData, onCreate, onUpdate, addToast, onRefresh])
 
   const handleDelete = useCallback(async (id: number) => {
     try {
       await onDelete(id)
       addToast('Registro eliminado', 'info')
+      onRefresh()
     } catch (err) {
       addToast((err as Error).message, 'error')
     }
-  }, [onDelete, addToast])
+  }, [onDelete, addToast, onRefresh])
 
   /**
    * Recibe el texto crudo del escáner, lo parsea con el parser inteligente
