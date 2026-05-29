@@ -66,7 +66,7 @@ export function Sidebar({ activeTab, onTabChange, profile, onSettingsClick, role
               <img src={logoMazito} alt="Logo Mazito" className="w-full h-full object-contain" />
             </div>
             <div>
-              <h1 className="text-base font-bold text-[#fafafa] tracking-tight" style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>Inventario IT</h1>
+              <h1 className="text-base font-bold text-[#fafafa] tracking-tight" style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>Inventario</h1>
               <p className="text-[11px] text-[#71717a] font-mono tracking-wider">IES VILLA DE MAZO</p>
             </div>
           </div>

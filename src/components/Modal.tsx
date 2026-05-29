@@ -35,7 +35,7 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={title}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true" aria-label={title}>
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"
@@ -43,10 +43,10 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
       />
 
       {/* Panel */}
-      <div className={twMerge('relative w-full', sizeClasses[size], 'animate-scale-in')}>
-        <div className="bg-[#18181b]/85 backdrop-blur-xl border border-[#3f3f46]/60 rounded-2xl shadow-2xl shadow-black/40 overflow-hidden">
+      <div className={twMerge('relative w-full max-h-full flex flex-col animate-scale-in', sizeClasses[size])}>
+        <div className="bg-[#18181b]/85 backdrop-blur-xl border border-[#3f3f46]/60 rounded-2xl shadow-2xl shadow-black/40 overflow-hidden flex flex-col max-h-full">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-[#27272a]">
+          <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-[#27272a]">
             <h2 className="text-lg font-semibold text-[#fafafa]" style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>{title}</h2>
             <button
               onClick={onClose}
@@ -58,7 +58,7 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
           </div>
 
           {/* Body */}
-          <div className="px-6 py-5 max-h-[70vh] overflow-y-auto">
+          <div className="px-6 py-5 overflow-y-auto">
             {children}
           </div>
         </div>

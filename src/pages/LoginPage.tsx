@@ -30,7 +30,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
       // Check credentials dynamically
       const savedPassword = localStorage.getItem('adminPassword') || 'admin'
       const isUsernameAdmin = username.toLowerCase() === 'admin'
-      
+
       if (isUsernameAdmin && password === savedPassword) {
         localStorage.setItem('userRole', 'admin')
         localStorage.setItem('adminNombre', 'Admin')
@@ -58,17 +58,17 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
       <div className="w-full max-w-md animate-scale-in z-10">
         {/* Card wrapper with shadow/border */}
         <div className="glass-strong rounded-3xl p-8 lg:p-10 shadow-2xl relative">
-          
+
           {/* Header */}
           <div className="flex flex-col items-center text-center mb-8">
             <div className="w-24 h-24 mb-4 flex items-center justify-center hover:scale-105 transition-transform duration-300">
               <img src={logoMazito} alt="Logo Mazito" className="w-full h-full object-contain" />
             </div>
             <h1 className="text-2xl lg:text-3xl font-extrabold text-[#fafafa] tracking-tight" style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
-              Inventario IT
+              Inventario
             </h1>
             <p className="text-xs text-[#71717a] font-mono tracking-widest mt-1">
-              INSTITUTO MAZO
+              IES VILLA DE MAZO
             </p>
             <p className="text-sm text-[#a1a1aa] mt-3">
               Inicia sesión para acceder al panel de control
