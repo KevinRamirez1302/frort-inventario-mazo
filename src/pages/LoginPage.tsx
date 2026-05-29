@@ -1,52 +1,41 @@
 import { useState } from 'react'
 import { User, Lock, Eye, EyeOff } from 'lucide-react'
 import { useToast } from '../hooks/useToast'
+import { authApi } from '../api/inventory'
 import logoMazito from '../assets/mazito.png'
 
 interface LoginPageProps {
-  onLoginSuccess: () => void
+  onLoginSuccess: (token: string, usuario: { nombre: string; email: string; rol: string; fotoPerfil?: string }) => void
 }
 
 export function LoginPage({ onLoginSuccess }: LoginPageProps) {
-  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const { addToast } = useToast()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!username.trim() || !password.trim()) {
-      addToast('Por favor, introduce tu usuario y contraseña.', 'error')
+    if (!email.trim() || !password.trim()) {
+      addToast('Por favor, introduce tu email y contraseña.', 'error')
       return
     }
 
     setIsLoading(true)
 
-    // Simulate network delay
-    setTimeout(() => {
+    try {
+      const { token, usuario } = await authApi.login(email, password)
+      localStorage.setItem('token', token)
+      localStorage.setItem('user', JSON.stringify(usuario))
+      addToast(`Bienvenido, ${usuario.nombre}.`, 'success')
+      onLoginSuccess(token, usuario)
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : 'Error al iniciar sesión.', 'error')
+    } finally {
       setIsLoading(false)
-      // Check credentials dynamically
-      const savedPassword = localStorage.getItem('adminPassword') || 'admin'
-      const isUsernameAdmin = username.toLowerCase() === 'admin'
-
-      if (isUsernameAdmin && password === savedPassword) {
-        localStorage.setItem('userRole', 'admin')
-        localStorage.setItem('adminNombre', 'Admin')
-        localStorage.setItem('adminEmail', 'admin@instituto.es')
-        addToast('Sesión de administrador iniciada.', 'success')
-        onLoginSuccess()
-      } else if (!isUsernameAdmin && (password === 'user' || password === '1234' || password.toLowerCase() === username.toLowerCase())) {
-        localStorage.setItem('userRole', 'user')
-        localStorage.setItem('adminNombre', username.charAt(0).toUpperCase() + username.slice(1))
-        localStorage.setItem('adminEmail', `${username.toLowerCase()}@instituto.es`)
-        addToast(`Sesión de usuario iniciada como ${username}.`, 'success')
-        onLoginSuccess()
-      } else {
-        addToast('Usuario o contraseña incorrectos.', 'error')
-      }
-    }, 800)
+    }
   }
 
   return (
@@ -77,22 +66,22 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Username Input */}
+            {/* Email Input */}
             <div className="space-y-2">
-              <label htmlFor="username" className="text-xs font-semibold uppercase tracking-wider text-[#a1a1aa] block">
-                Usuario
+              <label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-[#a1a1aa] block">
+                Email
               </label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-[#71717a] pointer-events-none">
                   <User size={18} />
                 </span>
                 <input
-                  id="username"
-                  type="text"
+                  id="email"
+                  type="email"
                   required
-                  placeholder="Introduce tu usuario"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Introduce tu email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-bg-surface/50 border border-border-subtle rounded-xl pl-11 pr-4 py-3 text-sm text-[#fafafa] placeholder-[#71717a] transition-all duration-200 focus:outline-none focus:border-[#7c3aed] focus:ring-2 focus:ring-[#7c3aed]/20"
                 />
               </div>

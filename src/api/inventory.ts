@@ -1,5 +1,15 @@
 import { api } from './client'
-import type { Producto, Categoria, Usuario, Movimiento, Prestamo } from '../types/inventory'
+import type { Producto, Categoria, Usuario, Movimiento, Prestamo, AuthResponse } from '../types/inventory'
+
+// Auth
+export const authApi = {
+  login: (email: string, password: string) =>
+    api.post<AuthResponse>('/auth/login', { email, password }).then(r => r.data),
+  getProfile: () =>
+    api.get<Omit<Usuario, 'password'>>('/auth/profile').then(r => r.data),
+  updateProfile: (data: { nombre?: string; password?: string }) =>
+    api.patch<Omit<Usuario, 'password'>>('/usuarios/profile', data).then(r => r.data),
+}
 
 // Productos
 export const productosApi = {

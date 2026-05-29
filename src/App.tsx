@@ -17,17 +17,16 @@ import { Modal } from './components/Modal'
 import type { Producto } from './types/inventory'
 import { twMerge } from 'tailwind-merge'
 
-// Carga diferida (lazy) del escáner para no aumentar el bundle principal
-// ZXing añade ~500KB — se descarga solo cuando el usuario abre el escáner
 const BarcodeScanner = lazy(() =>
   import('./components/BarcodeScanner').then(m => ({ default: m.BarcodeScanner }))
 )
 
 interface AppContentProps {
   onLogout: () => void
+  user: { nombre: string; email: string; rol: string; fotoPerfil?: string }
 }
 
-function AppContent({ onLogout }: AppContentProps) {
+function AppContent({ onLogout, user }: AppContentProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard')
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const saved = localStorage.getItem('theme')
@@ -35,20 +34,16 @@ function AppContent({ onLogout }: AppContentProps) {
     return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
   })
 
-  // User role state
-  const [role] = useState(() => localStorage.getItem('userRole') || 'admin')
+  const role = user.rol
 
-  // Profile data & Settings Modal state
-  const [profile, setProfile] = useState(() => {
-    const savedName = localStorage.getItem('adminNombre') || 'Admin'
-    const savedEmail = localStorage.getItem('adminEmail') || 'admin@instituto.es'
-    const savedAvatar = localStorage.getItem('adminAvatar') || ''
-    return { nombre: savedName, email: savedEmail, avatar: savedAvatar }
+  const [profile, setProfile] = useState({
+    nombre: user.nombre,
+    email: user.email,
+    avatar: user.fotoPerfil || '',
   })
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isScannerOpen, setIsScannerOpen] = useState(false)
 
-  // Scanner search states
   const [lastScannedCode, setLastScannedCode] = useState<string | null>(null)
   const [lastScannedProduct, setLastScannedProduct] = useState<Producto | null>(null)
   const [isScanResultOpen, setIsScanResultOpen] = useState(false)
@@ -61,14 +56,13 @@ function AppContent({ onLogout }: AppContentProps) {
     setIsScannerOpen(false)
     const scannedCode = text.trim()
     setLastScannedCode(scannedCode)
-    
-    // Buscar en productos guardados
-    const found = productos.find(p => 
+
+    const found = productos.find(p =>
       (p.numeroSerie && p.numeroSerie.trim().toLowerCase() === scannedCode.toLowerCase()) ||
       String(p.id) === scannedCode ||
       (p.nombre && p.nombre.trim().toLowerCase() === scannedCode.toLowerCase())
     )
-    
+
     setLastScannedProduct(found || null)
     setIsScanResultOpen(true)
   }
@@ -92,7 +86,7 @@ function AppContent({ onLogout }: AppContentProps) {
       setProductSearchQuery('')
       setInitialNewProductData(null)
     }
-    if (tab === 'usuarios' && role !== 'admin') {
+    if (tab === 'usuarios' && role !== 'profesor' && role !== 'desarrollador') {
       setActiveTab('404')
     } else {
       setActiveTab(tab)
@@ -112,7 +106,7 @@ function AppContent({ onLogout }: AppContentProps) {
         onTabChange={handleTabChange}
         profile={profile}
         onSettingsClick={() => setIsSettingsOpen(true)}
-        role={role}
+        role={role === 'desarrollador' ? 'admin' : role === 'profesor' ? 'admin' : 'user'}
       />
 
       <main className="flex-1 p-4 lg:p-8 pt-20 lg:pt-20 pb-28 lg:pb-8 overflow-y-auto max-w-[1600px] mx-auto w-full relative">
@@ -163,7 +157,7 @@ function AppContent({ onLogout }: AppContentProps) {
                 usuarios={usuarios}
                 movimientos={movimientos}
                 prestamos={prestamos}
-                role={role}
+                role={role === 'desarrollador' ? 'admin' : role === 'profesor' ? 'admin' : 'user'}
               />
             )}
             {activeTab === 'productos' && (
@@ -175,7 +169,7 @@ function AppContent({ onLogout }: AppContentProps) {
               />
             )}
             {activeTab === 'categorias' && <CategoriasPage />}
-            {activeTab === 'usuarios' && role === 'admin' && <UsuariosPage />}
+            {activeTab === 'usuarios' && (role === 'profesor' || role === 'desarrollador') && <UsuariosPage />}
             {activeTab === 'movimientos' && <MovimientosPage />}
             {activeTab === 'prestamos' && <PrestamosPage />}
             {activeTab === '404' && <NotFoundPage onGoBack={() => setActiveTab('dashboard')} />}
@@ -224,7 +218,6 @@ function AppContent({ onLogout }: AppContentProps) {
       >
         {lastScannedProduct ? (
           <div className="space-y-6">
-            {/* Header box with green accent */}
             <div className="flex items-center gap-4 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
               <div className="w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
                 <Check size={20} />
@@ -235,7 +228,6 @@ function AppContent({ onLogout }: AppContentProps) {
               </div>
             </div>
 
-            {/* Product Details Grid */}
             <div className="bg-[#18181b]/55 border border-[#27272a] rounded-2xl p-5 space-y-4">
               <div className="border-b border-[#27272a]/60 pb-3">
                 <p className="text-[10px] text-[#71717a] font-mono uppercase tracking-wider">Nombre del Producto</p>
@@ -245,7 +237,7 @@ function AppContent({ onLogout }: AppContentProps) {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-[10px] text-[#71717a] font-mono uppercase tracking-wider">Estado</p>
-                  <span className={twMerge("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border mt-1.5 capitalize", 
+                  <span className={twMerge("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border mt-1.5 capitalize",
                     lastScannedProduct.estado === 'disponible' && 'bg-[#10b981]/10 text-[#10b981] border-[#10b981]/20',
                     lastScannedProduct.estado === 'asignado' && 'bg-[#3b82f6]/10 text-[#3b82f6] border-[#3b82f6]/20',
                     lastScannedProduct.estado === 'en_mantenimiento' && 'bg-[#f59e0b]/10 text-[#f59e0b] border-[#f59e0b]/20',
@@ -288,7 +280,6 @@ function AppContent({ onLogout }: AppContentProps) {
               </div>
             </div>
 
-            {/* Modal Actions */}
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#27272a]">
               <button
                 onClick={() => setIsScanResultOpen(false)}
@@ -311,7 +302,6 @@ function AppContent({ onLogout }: AppContentProps) {
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Header box with orange accent */}
             <div className="flex items-center gap-4 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
               <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center flex-shrink-0">
                 <AlertTriangle size={20} />
@@ -322,7 +312,6 @@ function AppContent({ onLogout }: AppContentProps) {
               </div>
             </div>
 
-            {/* Code Scanned Box */}
             <div className="bg-[#18181b]/55 border border-[#27272a] rounded-2xl p-5 space-y-2">
               <p className="text-[10px] text-[#71717a] font-mono uppercase tracking-wider">Código Escaneado</p>
               <p className="text-lg font-mono font-bold text-[#fafafa] break-all bg-black/35 px-4 py-2.5 rounded-xl border border-[#27272a]">
@@ -330,7 +319,6 @@ function AppContent({ onLogout }: AppContentProps) {
               </p>
             </div>
 
-            {/* Modal Actions */}
             <div className="flex items-center justify-between pt-4 border-t border-[#27272a]">
               <button
                 onClick={() => {
@@ -349,7 +337,7 @@ function AppContent({ onLogout }: AppContentProps) {
                 >
                   Cerrar
                 </button>
-                {role === 'admin' && (
+                {(role === 'profesor' || role === 'desarrollador') && (
                   <button
                     onClick={() => {
                       setIsScanResultOpen(false)
@@ -376,7 +364,7 @@ function AppContent({ onLogout }: AppContentProps) {
         size="sm"
       >
         <div className="space-y-6">
-          <div className="flex items-start gap-4 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400">
+          <div className="flex items-center gap-4 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400">
             <div className="w-10 h-10 rounded-xl bg-red-500/15 flex items-center justify-center flex-shrink-0 text-red-500">
               <AlertTriangle size={20} />
             </div>
@@ -409,28 +397,35 @@ function AppContent({ onLogout }: AppContentProps) {
 }
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'))
+  const [user, setUser] = useState<{ nombre: string; email: string; rol: string; fotoPerfil?: string } | null>(() => {
+    const saved = localStorage.getItem('user')
+    return saved ? JSON.parse(saved) : null
+  })
 
-  const handleLoginSuccess = () => {
-    localStorage.setItem('isAuthenticated', 'true')
-    setIsAuthenticated(true)
+  const handleLoginSuccess = (newToken: string, newUser: { nombre: string; email: string; rol: string; fotoPerfil?: string }) => {
+    setToken(newToken)
+    setUser(newUser)
   }
 
   const handleLogout = () => {
-    localStorage.removeItem('isAuthenticated')
-    localStorage.removeItem('userRole')
-    localStorage.removeItem('adminNombre')
-    localStorage.removeItem('adminEmail')
-    setIsAuthenticated(false)
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    setToken(null)
+    setUser(null)
+  }
+
+  if (!token || !user) {
+    return (
+      <ToastProvider>
+        <LoginPage onLoginSuccess={handleLoginSuccess} />
+      </ToastProvider>
+    )
   }
 
   return (
     <ToastProvider>
-      {isAuthenticated ? (
-        <AppContent onLogout={handleLogout} />
-      ) : (
-        <LoginPage onLoginSuccess={handleLoginSuccess} />
-      )}
+      <AppContent onLogout={handleLogout} user={user} />
     </ToastProvider>
   )
 }

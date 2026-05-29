@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Modal } from './Modal'
 import { useToast } from '../hooks/useToast'
+import { authApi } from '../api/inventory'
 import { User, Mail, Lock, Eye, EyeOff, Camera, Trash2 } from 'lucide-react'
 
 interface SettingsModalProps {
@@ -12,23 +13,18 @@ interface SettingsModalProps {
 
 export function SettingsModal({ open, onClose, profile, onProfileUpdate }: SettingsModalProps) {
   const [nombre, setNombre] = useState(profile.nombre)
-  const [email, setEmail] = useState(profile.email)
-  const [avatar, setAvatar] = useState(profile.avatar)
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  
+
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  
+
   const { addToast } = useToast()
 
-  // Reset inputs when opened
   useEffect(() => {
     if (open) {
       setNombre(profile.nombre)
-      setEmail(profile.email)
-      setAvatar(profile.avatar)
       setNewPassword('')
       setConfirmPassword('')
     }
@@ -37,27 +33,27 @@ export function SettingsModal({ open, onClose, profile, onProfileUpdate }: Setti
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      if (file.size > 2 * 1024 * 1024) { // 2MB Limit for localStorage
+      if (file.size > 2 * 1024 * 1024) {
         addToast('La imagen es demasiado grande. El límite es de 2MB.', 'error')
         return
       }
       const reader = new FileReader()
       reader.onloadend = () => {
-        setAvatar(reader.result as string)
+        onProfileUpdate({ ...profile, avatar: reader.result as string })
       }
       reader.readAsDataURL(file)
     }
   }
 
   const handleRemoveAvatar = () => {
-    setAvatar('')
+    onProfileUpdate({ ...profile, avatar: '' })
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!nombre.trim() || !email.trim()) {
-      addToast('El nombre y el correo electrónico son obligatorios.', 'error')
+    if (!nombre.trim()) {
+      addToast('El nombre es obligatorio.', 'error')
       return
     }
 
@@ -74,50 +70,51 @@ export function SettingsModal({ open, onClose, profile, onProfileUpdate }: Setti
 
     setIsSaving(true)
 
-    setTimeout(() => {
-      setIsSaving(false)
-      
-      // Update profile
-      onProfileUpdate({ nombre, email, avatar })
-      localStorage.setItem('adminNombre', nombre)
-      localStorage.setItem('adminEmail', email)
-      localStorage.setItem('adminAvatar', avatar)
-      
-      // Update password if typed
+    try {
+      const updated = await authApi.updateProfile({
+        nombre: nombre !== profile.nombre ? nombre : undefined,
+        password: newPassword || undefined,
+      })
+
+      onProfileUpdate({ nombre: updated.nombre, email: updated.email, avatar: profile.avatar })
+
       if (newPassword) {
-        localStorage.setItem('adminPassword', newPassword)
         addToast('Perfil y contraseña actualizados correctamente.', 'success')
       } else {
         addToast('Perfil actualizado correctamente.', 'success')
       }
-      
+
       onClose()
-    }, 600)
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : 'Error al actualizar perfil.', 'error')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
     <Modal open={open} onClose={onClose} title="Ajustes de Perfil" size="md">
       <form onSubmit={handleSubmit} className="space-y-5">
-        
+
         {/* Avatar Uploader UI */}
         <div className="flex flex-col items-center justify-center gap-3 py-2">
           <div className="relative group w-20 h-20 rounded-full overflow-hidden border border-border-subtle bg-bg-surface flex items-center justify-center shadow-inner">
-            {avatar ? (
-              <img src={avatar} alt="Avatar Preview" className="w-full h-full object-cover animate-fade-in" />
+            {profile.avatar ? (
+              <img src={profile.avatar} alt="Avatar Preview" className="w-full h-full object-cover animate-fade-in" />
             ) : (
               <span className="text-xl font-extrabold text-[#71717a] uppercase select-none">
                 {nombre.split(' ').map(n => n[0]).slice(0, 2).join('') || 'AD'}
               </span>
             )}
-            
+
             <label className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[10px] font-medium cursor-pointer transition-opacity duration-200">
               <Camera size={18} className="mb-0.5" />
               <span>Cambiar</span>
               <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
             </label>
           </div>
-          
-          {avatar && (
+
+          {profile.avatar && (
             <button
               type="button"
               onClick={handleRemoveAvatar}
@@ -128,11 +125,11 @@ export function SettingsModal({ open, onClose, profile, onProfileUpdate }: Setti
             </button>
           )}
         </div>
-        
+
         {/* Profile Details Section */}
         <div className="space-y-4">
           <h3 className="text-sm font-bold text-[#fafafa] uppercase tracking-wider font-mono">Datos Personales</h3>
-          
+
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-[#a1a1aa] block">Nombre</label>
             <div className="relative">
@@ -143,7 +140,7 @@ export function SettingsModal({ open, onClose, profile, onProfileUpdate }: Setti
                 type="text"
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
-                placeholder="Nombre del Administrador"
+                placeholder="Tu nombre"
                 className="w-full bg-bg-surface/50 border border-border-subtle rounded-xl pl-10 pr-4 py-2.5 text-sm text-[#fafafa] placeholder-[#71717a] transition-all duration-200 focus:outline-none focus:border-[#7c3aed] focus:ring-2 focus:ring-[#7c3aed]/20"
                 required
               />
@@ -158,11 +155,9 @@ export function SettingsModal({ open, onClose, profile, onProfileUpdate }: Setti
               </span>
               <input
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="correo@instituto.es"
-                className="w-full bg-bg-surface/50 border border-border-subtle rounded-xl pl-10 pr-4 py-2.5 text-sm text-[#fafafa] placeholder-[#71717a] transition-all duration-200 focus:outline-none focus:border-[#7c3aed] focus:ring-2 focus:ring-[#7c3aed]/20"
-                required
+                value={profile.email}
+                disabled
+                className="w-full bg-bg-surface/30 border border-border-subtle rounded-xl pl-10 pr-4 py-2.5 text-sm text-[#71717a] cursor-not-allowed"
               />
             </div>
           </div>

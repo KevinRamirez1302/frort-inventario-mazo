@@ -27,11 +27,21 @@ export interface Usuario {
   id: number
   nombre: string
   email: string
-  departamento: string | null
-  telefono: string | null
+  password?: string
+  fotoPerfil?: string | null
+  departamento?: string | null
+  telefono?: string | null
+  rol: 'alumno' | 'profesor' | 'desarrollador'
   createdAt: string
   updatedAt: string
 }
+
+export interface AuthResponse {
+  usuario: Omit<Usuario, 'password'>
+  token: string
+}
+
+export type Rol = Usuario['rol']
 
 export interface Movimiento {
   id: number
