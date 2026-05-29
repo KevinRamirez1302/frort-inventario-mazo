@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UML Learning Deck — IES Villa de Mazo</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .code-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* --- Animaciones base del Scroll Reveal --- */
+        .reveal-card {
+            opacity: 0;
+            transition: all 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: transform, opacity;
+        }
+
+        /* 1. Casos de Uso: Desvanecimiento Lateral Izquierdo */
+        .card-blue.reveal-card {
+            transform: translateX(-50px);
+        }
+
+        .card-blue.reveal-card.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* 2. Clases: Escala e impacto */
+        .card-orange.reveal-card {
+            transform: scale(0.92);
+        }
+
+        .card-orange.reveal-card.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* 3. Secuencia: Cascada de arriba a abajo */
+        .card-purple.reveal-card {
+            transform: translateY(-50px);
+        }
+
+        .card-purple.reveal-card.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 4. Componentes: Entrada sutil + Pulso lento en el contenedor */
+        .card-emerald.reveal-card {
+            transform: translateY(30px);
+        }
+
+        .card-emerald.reveal-card.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .pulse-target {
+            animation: slowPulse 4s infinite ease-in-out;
+        }
+
+        @keyframes slowPulse {
+
+            0%,
+            100% {
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            }
+
+            50% {
+                box-shadow: 0 20px 25px -5px rgba(16, 185, 129, 0.1), 0 10px 10px -5px rgba(16, 185, 129, 0.04);
+            }
+        }
+
+        /* 5. Estados: Desplazamiento + Rotación suave del nodo inicial */
+        .card-rose.reveal-card {
+            transform: translateY(40px) rotate(1deg);
+        }
+
+        .card-rose.reveal-card.active {
+            opacity: 1;
+            transform: translateY(0) rotate(0deg);
+        }
+
+        /* Glassmorphism utility */
+        .btn-glass {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-900 antialiased selection:bg-slate-900 selection:text-white">
+
+    <header
+        class="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div
+                class="h-10 w-10 rounded-xl bg-gradient-to-tr from-slate-900 to-slate-700 flex items-center justify-center text-white font-bold text-lg shadow-sm">
+                U</div>
+            <div>
+                <h1 class="text-sm font-bold text-slate-900 tracking-tight">UML Inventario IES Villa de Mazo</h1>
+                <p class="text-xs text-slate-500">IES Villa de Mazo</p>
+            </div>
+        </div>
+        <nav class="hidden lg:flex space-x-1 bg-slate-100 p-1 rounded-xl border border-slate-200/60">
+            <a href="#casos-uso"
+                class="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 hover:bg-white transition-all">Casos
+                de Uso</a>
+            <a href="#clases"
+                class="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 hover:bg-white transition-all">Clases</a>
+            <a href="#secuencia"
+                class="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 hover:bg-white transition-all">Secuencia</a>
+            <a href="#componentes"
+                class="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 hover:bg-white transition-all">Componentes</a>
+            <a href="#estados"
+                class="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 hover:bg-white transition-all">Estados</a>
+        </nav>
+    </header>
+
+    <section class="max-w-[1600px] mx-auto px-8 pt-12 pb-4">
+        <div class="bg-white border border-slate-200 rounded-3xl p-8 md:p-10 relative overflow-hidden shadow-xs">
+            <div class="max-w-4xl relative z-10">
+                <span
+                    class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-900 text-white mb-4">
+                    Inventario Interno Educativo
+                </span>
+                <h2 class="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 mb-4 leading-none">
+                    Especificaciones Técnicas del Sistema de Inventario
+                </h2>
+                <p class="text-slate-600 text-sm md:text-base font-normal leading-relaxed">
+                    Modelado formal del frontend interactivo de la plataforma. Este set modular de diagramas de
+                    comportamiento e infraestructura estática proporciona las pautas definitivas de desarrollo para el
+                    control de activos del centro educativo.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <main class="max-w-[1600px] mx-auto px-8 py-8 space-y-12">
+
+        <section id="casos-uso"
+            class="reveal-card card-blue bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden grid grid-cols-1 lg:grid-cols-12">
+            <div
+                class="lg:col-span-5 p-8 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-200 bg-gradient-to-b from-blue-50/20 to-transparent">
+                <div>
+                    <div class="flex items-center space-x-2.5 mb-4">
+                        <span
+                            class="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-xs">01</span>
+                        <h3 class="text-lg font-bold text-slate-900 tracking-tight">Diagrama de Casos de Uso</h3>
+                    </div>
+                    <p class="text-slate-600 text-xs md:text-sm leading-relaxed mb-6">
+                        Mapea los requerimientos funcionales y las fronteras operativas del sistema de gestión. Ilustra
+                        la interacción directa de los roles autorizados con los módulos de auditoría y préstamos.
+                    </p>
+                    <div class="space-y-3">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Guía Técnica</h4>
+                        <ul class="space-y-2 text-xs text-slate-600 font-medium">
+                            <li class="flex items-center gap-2"><span
+                                    class="h-1.5 w-1.5 rounded-full bg-blue-600"></span><strong>Actores
+                                    principales:</strong> Administrador (acceso total) y Usuario Estándar.</li>
+                            <li class="flex items-center gap-2"><span
+                                    class="h-1.5 w-1.5 rounded-full bg-blue-600"></span><strong>Frontera:</strong>
+                                Encapsulado total en entorno local de red del centro.</li>
+                            <li class="flex items-center gap-2"><span
+                                    class="h-1.5 w-1.5 rounded-full bg-blue-600"></span><strong>Inclusiones:</strong> El
+                                escaneo de barras es mandatorio para la gestión del catálogo.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="flex gap-2.5 mt-8">
+                    <button onclick="toggleCodePanel('code-use-case')"
+                        class="btn-glass px-4 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-all cursor-pointer">Ver
+                        Código</button>
+                    <button onclick="copyToClipboard('code-source-use-case')"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer">Copiar
+                        Código</button>
+                </div>
+            </div>
+            <div
+                class="lg:col-span-7 p-8 bg-slate-50/40 flex flex-col items-center justify-center min-h-[500px] relative overflow-x-auto">
+                <div
+                    class="w-full min-w-[850px] transform hover:scale-105 transition-transform duration-500 ease-out mermaid flex justify-center">
+                    flowchart LR
+                    %% Styling parameters
+                    classDef actorStyle fill:#ffffff,stroke:#2563eb,stroke-width:2px,font-weight:bold;
+                    classDef ucStyle fill:#ffffff,stroke:#0284c7,stroke-width:2px;
+
+                    subgraph Sistema ["Sistema de Gestión de Inventario IES Villa de Mazo"]
+                    ucLogin(["Iniciar Sesión"])
+                    ucLogout(["Confirmar Salida"])
+                    ucDashboard(["Visualizar Dashboard e Historial"])
+                    ucCRUD(["Gestionar Catálogo de Productos"])
+                    ucScan(["Escanear Código Barras / QR"])
+                    ucLoans(["Controlar Préstamos de Dispositivos"])
+                    ucReport(["Exportar Reportes e Inventario PDF/Excel"])
+                    ucUsers(["Gestionar Usuarios y Roles Administrativos"])
+
+                    %% Relations
+                    ucCRUD -.->|&lt;&lt;include&gt;&gt;| ucScan
+                    ucLoans -.->|&lt;&lt;include&gt;&gt;| ucScan
+                    end
+
+                    Admin((Administrador)):::actorStyle
+                    User((Usuario Estándar)):::actorStyle
+
+                    User --&gt; ucLogin
+                    User --&gt; ucLogout
+                    User --&gt; ucDashboard
+                    User --&gt; ucCRUD
+                    User --&gt; ucLoans
+                    User --&gt; ucReport
+
+                    Admin --&gt; ucLogin
+                    Admin --&gt; ucLogout
+                    Admin --&gt; ucDashboard
+                    Admin --&gt; ucCRUD
+                    Admin --&gt; ucLoans
+                    Admin --&gt; ucReport
+                    Admin --&gt; ucUsers
+
+                    class ucLogin,ucLogout,ucDashboard,ucCRUD,ucScan,ucLoans,ucReport,ucUsers ucStyle;
+                </div>
+                <div id="code-use-case"
+                    class="hidden absolute inset-0 bg-slate-900 p-6 overflow-y-auto text-slate-300 rounded-r-3xl z-20">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-xs font-bold uppercase tracking-wider text-blue-400">Mermaid Code
+                            Source</span>
+                        <button onclick="toggleCodePanel('code-use-case')"
+                            class="text-slate-400 hover:text-white text-xs font-bold cursor-pointer">✕</button>
+                    </div>
+                    <pre id="code-source-use-case" class="code-font text-xs leading-relaxed selection:bg-blue-500/30">
+flowchart LR
+    subgraph Sistema ["Sistema de Gestión de Inventario IES Villa de Mazo"]
+        ucLogin(["Iniciar Sesión"])
+        ucLogout(["Confirmar Salida"])
+        ucDashboard(["Visualizar Dashboard e Historial"])
+        ucCRUD(["Gestionar Catálogo de Productos"])
+        ucScan(["Escanear Código Barras / QR"])
+        ucLoans(["Controlar Préstamos de Dispositivos"])
+        ucReport(["Exportar Reportes e Inventario PDF/Excel"])
+        ucUsers(["Gestionar Usuarios y Roles Administrativos"])
+        
+        ucCRUD -.->|&lt;&lt;include&gt;&gt;| ucScan
+        ucLoans -.->|&lt;&lt;include&gt;&gt;| ucScan
+    end
+
+    Admin((Administrador))
+    User((Usuario Estándar))
+
+    User --&gt; ucLogin
+    User --&gt; ucLogout
+    User --&gt; ucDashboard
+    User --&gt; ucCRUD
+    User --&gt; ucLoans
+    User --&gt; ucReport
+
+    Admin --&gt; ucLogin
+    Admin --&gt; ucLogout
+    Admin --&gt; ucDashboard
+    Admin --&gt; ucCRUD
+    Admin --&gt; ucLoans
+    Admin --&gt; ucReport
+    Admin --&gt; ucUsers</pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="clases"
+            class="reveal-card card-orange bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden grid grid-cols-1 lg:grid-cols-12">
+            <div
+                class="lg:col-span-5 p-8 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-200 bg-gradient-to-b from-amber-50/20 to-transparent">
+                <div>
+                    <div class="flex items-center space-x-2.5 mb-4">
+                        <span
+                            class="h-8 w-8 rounded-lg bg-amber-600 flex items-center justify-center text-white font-bold text-xs">02</span>
+                        <h3 class="text-lg font-bold text-slate-900 tracking-tight">Diagrama de Clases</h3>
+                    </div>
+                    <p class="text-slate-600 text-xs md:text-sm leading-relaxed mb-6">
+                        Representa la arquitectura estática y las entidades de datos declaradas en los tipos estrictos
+                        de TypeScript de la aplicación.
+                    </p>
+                    <div class="space-y-3">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Guía Técnica</h4>
+                        <ul class="space-y-2 text-xs text-slate-600 font-medium">
+                            <li class="flex items-center gap-2"><span
+                                    class="h-1.5 w-1.5 rounded-full bg-amber-600"></span><strong>Visibilidad:</strong>
+                                Propiedades privadas (<code
+                                    class="bg-slate-100 text-slate-800 px-0.5 rounded text-xs">-</code>) y métodos
+                                públicos (<code class="bg-slate-100 text-slate-800 px-0.5 rounded text-xs">+</code>).
+                            </li>
+                            <li class="flex items-center gap-2"><span
+                                    class="h-1.5 w-1.5 rounded-full bg-amber-600"></span><strong>Composición:</strong>
+                                Relación fuerte e irreversible entre Categorías y Productos.</li>
+                            <li class="flex items-center gap-2"><span
+                                    class="h-1.5 w-1.5 rounded-full bg-amber-600"></span><strong>Entidades:</strong> Se
+                                modela la clase Loan (Préstamo) vinculada al aula o persona responsable.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="flex gap-2.5 mt-8">
+                    <button onclick="toggleCodePanel('code-classes')"
+                        class="btn-glass px-4 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-all cursor-pointer">Ver
+                        Código</button>
+                    <button onclick="copyToClipboard('code-source-classes')"
+                        class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer">Copiar
+                        Código</button>
+                </div>
+            </div>
+            <div
+                class="lg:col-span-7 p-8 bg-slate-50/40 flex flex-col items-center justify-center min-h-[500px] relative overflow-x-auto">
+                <div
+                    class="w-full min-w-[850px] transform hover:scale-105 transition-transform duration-500 ease-out mermaid flex justify-center">
+                    classDiagram
+                    class ClientHTTP {
+                    -string baseURL
+                    -instance axiosInstance
+                    +get(string endpoint) Response
+                    +post(string endpoint, object data) Response
+                    }
+                    class APIInventory {
+                    +getProducts() Array~Product~
+                    +createProduct(object data) boolean
+                    +registerLoan(object data) boolean
+                    }
+                    class Product {
+                    -int id
+                    -string name
+                    -string serialNumber
+                    -string status
+                    -string location
+                    +register() boolean
+                    +updateStatus(string status) void
+                    }
+                    class Category {
+                    -int id
+                    -string title
+                    -string description
+                    +addAsset() void
+                    }
+                    class Loan {
+                    -int id
+                    -int productId
+                    -string borrowerName
+                    -date dueDate
+                    +confirmReturn() void
+                    }
+
+                    ClientHTTP &lt;|-- APIInventory : Generalización
+                    APIInventory --&gt; Product : Manipula
+                    Category "1" *-- "0..*" Product : Composición Fuerte
+                    Product "1" --&gt; "0..*" Loan : Registra Historial
+                </div>
+                <div id="code-classes"
+                    class="hidden absolute inset-0 bg-slate-900 p-6 overflow-y-auto text-slate-300 rounded-r-3xl z-20">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-xs font-bold uppercase tracking-wider text-amber-400">Mermaid Code
+                            Source</span>
+                        <button onclick="toggleCodePanel('code-classes')"
+                            class="text-slate-400 hover:text-white text-xs font-bold cursor-pointer">✕</button>
+                    </div>
+                    <pre id="code-source-classes" class="code-font text-xs leading-relaxed selection:bg-amber-500/30">
+classDiagram
+    class ClientHTTP {
+        -string baseURL
+        -instance axiosInstance
+        +get(string endpoint) Response
+        +post(string endpoint, object data) Response
+    }
+    class APIInventory {
+        +getProducts() Array~Product~
+        +createProduct(object data) boolean
+        +registerLoan(object data) boolean
+    }
+    class Product {
+        -int id
+        -string name
+        -string serialNumber
+        -string status
+        -string location
+        +register() boolean
+        +updateStatus(string status) void
+    }
+    class Category {
+        -int id
+        -string title
+        -string description
+        +addAsset() void
+    }
+    class Loan {
+        -int id
+        -int productId
+        -string borrowerName
+        -date dueDate
+        +confirmReturn() void
+    }
+
+    ClientHTTP &lt;|-- APIInventory
+    APIInventory --&gt; Product
+    Category "1" *-- "0..*" Product
+    Product "1" --&gt; "0..*" Loan</pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="secuencia"
+            class="reveal-card card-purple bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden grid grid-cols-1 lg:grid-cols-12">
+            <div
+                class="lg:col-span-5 p-8 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-200 bg-gradient-to-b from-indigo-50/20 to-transparent">
+                <div>
+                    <div class="flex items-center space-x-2.5 mb-4">
+                        <span
+                            class="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-xs">03</span>
+                        <h3 class="text-lg font-bold text-slate-900 tracking-tight">Diagrama de Secuencia Temporal</h3>
+                    </div>
+                    <p class="text-slate-600 text-xs md:text-sm leading-relaxed mb-6">
+                        Detalla el flujo cronológico y ordenado del ciclo de vida del escáner en tiempo real mediante el
+                        custom hook e integración de la cámara externa.
+                    </p>
+                    <div class="space-y-3">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Guía Técnica</h4>
+                        <ul class="space-y-2 text-xs text-slate-600 font-medium">
+                            <li class="flex items-center gap-2"><span
+                                    class="h-1.5 w-1.5 rounded-full bg-indigo-600"></span><strong>Flujo
+                                    asíncrono:</strong> Ejecución y destrucción de cámara al identificar el hardware.
+                            </li>
+                            <li class="flex items-center gap-2"><span
+                                    class="h-1.5 w-1.5 rounded-full bg-indigo-600"></span><strong>Carga perezosa (Lazy
+                                    loading):</strong> La librería `@zxing` no satura el bundle inicial.</li>
+                            <li class="flex items-center gap-2"><span
+                                    class="h-1.5 w-1.5 rounded-full bg-indigo-600"></span><strong>Controladores:</strong>
+                                Interceptores Axios propagan errores si el producto no existe en base de datos.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="flex gap-2.5 mt-8">
+                    <button onclick="toggleCodePanel('code-sequence')"
+                        class="btn-glass px-4 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-all cursor-pointer">Ver
+                        Código</button>
+                    <button onclick="copyToClipboard('code-source-sequence')"
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer">Copiar
+                        Código</button>
+                </div>
+            </div>
+            <div
+                class="lg:col-span-7 p-8 bg-slate-50/40 flex flex-col items-center justify-center min-h-[500px] relative overflow-x-auto">
+                <div
+                    class="w-full min-w-[850px] transform hover:scale-105 transition-transform duration-500 ease-out mermaid flex justify-center">
+                    sequenceDiagram
+                    autonumber
+                    actor Usuario as Operador / Profesor
+                    participant UI as BarcodeScanner (Componente)
+                    participant Hook as useScanner (Hook)
+                    participant Lib as @zxing/library
+                    participant API as AxiosClient (API)
+
+                    Usuario->>UI: Activa Escáner de Cámara
+                    activate UI
+                    UI->>Hook: initScanner()
+                    activate Hook
+                    Hook->>Lib: Carga dinámica y perezosa
+                    activate Lib
+                    Lib-->>Hook: Instancia de decodificación lista
+                    deactivate Lib
+                    Hook->>UI: Renderiza Viewport + Animación láser
+                    UI-->>Usuario: Muestra stream de vídeo en pantalla
+
+                    Usuario->>UI: Enfoca código físico del hardware del centro
+                    UI->>Hook: Capture Frame binario
+                    Hook->>Lib: decodeFromVideoDevice()
+                    activate Lib
+                    Lib-->>Hook: Devuelve cadena texto ("SN-9812A")
+                    deactivate Lib
+
+                    Hook->>API: GET /inventory/search?sn=SN-9812A
+                    activate API
+                    API-->>Hook: Respuesta 200 OK (Ficha JSON de Activo)
+                    deactivate API
+
+                    Hook->>UI: setProductState(data)
+                    deactivate Hook
+                    UI-->>Usuario: Despliega Ficha en Modal Premium
+                    deactivate UI
+                </div>
+                <div id="code-sequence"
+                    class="hidden absolute inset-0 bg-slate-900 p-6 overflow-y-auto text-slate-300 rounded-r-3xl z-20">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-xs font-bold uppercase tracking-wider text-indigo-400">Mermaid Code
+                            Source</span>
+                        <button onclick="toggleCodePanel('code-sequence')"
+                            class="text-slate-400 hover:text-white text-xs font-bold cursor-pointer">✕</button>
+                    </div>
+                    <pre id="code-source-sequence" class="code-font text-xs leading-relaxed selection:bg-indigo-500/30">
+sequenceDiagram
+    autonumber
+    actor Usuario as Operador / Profesor
+    participant UI as BarcodeScanner (Componente)
+    participant Hook as useScanner (Hook)
+    participant Lib as @zxing/library
+    participant API as AxiosClient (API)
+
+    Usuario->>UI: Activa Escáner de Cámara
+    activate UI
+    UI->>Hook: initScanner()
+    activate Hook
+    Hook->>Lib: Carga dinámica y perezosa
+    activate Lib
+    Lib-->>Hook: Instancia de decodificación lista
+    deactivate Lib
+    Hook->>UI: Renderiza Viewport + Animación láser
+    UI-->>Usuario: Muestra stream de vídeo en pantalla
+
+    Usuario->>UI: Enfoca código físico del hardware del centro
+    UI->>Hook: Capture Frame binario
+    Hook->>Lib: decodeFromVideoDevice()
+    activate Lib
+    Lib-->>Hook: Devuelve cadena texto ("SN-9812A")
+    deactivate Lib
+
+    Hook->>API: GET /inventory/search?sn=SN-9812A
+    activate API
+    API-->>Hook: Respuesta 200 OK (Ficha JSON de Activo)
+    deactivate API
+
+    Hook->>UI: setProductState(data)
+    deactivate Hook
+    UI-->>Usuario: Despliega Ficha en Modal Premium
+    deactivate UI</pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="componentes"
+            class="reveal-card card-emerald pulse-target bg-white rounded-3xl border border-slate-200 overflow-hidden grid grid-cols-1 lg:grid-cols-12">
+            <div
+                class="lg:col-span-5 p-8 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-200 bg-gradient-to-b from-emerald-50/20 to-transparent">
+                <div>
+                    <div class="flex items-center space-x-2.5 mb-4">
+                        <span
+                            class="h-8 w-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-bold text-xs">04</span>
+                        <h3 class="text-lg font-bold text-slate-900 tracking-tight">Diagrama de Componentes</h3>
+                    </div>
+                    <p class="text-slate-600 text-xs md:text-sm leading-relaxed mb-6">
+                        Estructura física modular de la SPA y su comunicación asíncrona hacia el Gateway e
+                        infraestructura orquestada con Docker Compose.
+                    </p>
+                    <div class="space-y-3">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Guía Técnica</h4>
+                        <ul class="space-y-2 text-xs text-slate-600 font-medium">
+                            <li class="flex items-center gap-2"><span
+                                    class="h-1.5 w-1.5 rounded-full bg-emerald-600"></span><strong>Bajo
+                                    Acoplamiento:</strong> Capa de presentación desacoplada de la red mediante custom
+                                hooks.</li>
+                            <li class="flex items-center gap-2"><span
+                                    class="h-1.5 w-1.5 rounded-full bg-emerald-600"></span><strong>Contratos de
+                                    Interfaz:</strong> Comunicación estructurada mediante JSON REST API sin lógica
+                                transaccional monetaria.</li>
+                            <li class="flex items-center gap-2"><span
+                                    class="h-1.5 w-1.5 rounded-full bg-emerald-600"></span><strong>Aislamiento:</strong>
+                                El contenedor Docker de backend maneja las peticiones y almacena los datos de los
+                                equipos de forma aislada.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="flex gap-2.5 mt-8">
+                    <button onclick="toggleCodePanel('code-components')"
+                        class="btn-glass px-4 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-all cursor-pointer">Ver
+                        Código</button>
+                    <button onclick="copyToClipboard('code-source-components')"
+                        class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer">Copiar
+                        Código</button>
+                </div>
+            </div>
+            <div
+                class="lg:col-span-7 p-8 bg-slate-50/40 flex flex-col items-center justify-center min-h-[500px] relative overflow-x-auto">
+                <div
+                    class="w-full min-w-[850px] transform hover:scale-105 transition-transform duration-500 ease-out mermaid flex justify-center">
+                    flowchart LR
+                    classDef compStyle fill:#ffffff,stroke:#059669,stroke-width:2px;
+
+                    subgraph SPA ["Cliente Web Frontend (React SPA)"]
+                    subgraph CapaPresentacion ["Capa de Interfaces de Usuario"]
+                    Pages["Vistas Globales (Pages)<br />- Dashboard<br />- Productos<br />- Préstamos"]:::compStyle
+                    Components["Componentes de UI<br />- BarcodeScanner<br />- DataTable<br />- Sidebar"]:::compStyle
+                    end
+                    subgraph CapaLogica ["Lógica de Estado Encapsulada"]
+                    Hooks["Hooks Personalizados<br />- useFetch<br />- useScanner<br />- useToast"]:::compStyle
+                    end
+                    subgraph CapaDatos ["Servicios de Red y Comunicación"]
+                    AxiosClient["Cliente API Axios<br />- inventory.ts<br />- client.ts"]:::compStyle
+                    end
+                    end
+
+                    subgraph Infraestructura ["Servidor Backend (Orquestación Docker)"]
+                    Backend["Contenedor API Node.js / Docker Compose"]:::compStyle
+                    end
+
+                    %% Dependencies routing
+                    Pages --&gt; Components
+                    Components --&gt; Hooks
+                    Hooks --&gt; AxiosClient
+                    AxiosClient --&gt;|"Interfaz Requerida: JSON REST API"| Backend
+                </div>
+                <div id="code-components"
+                    class="hidden absolute inset-0 bg-slate-900 p-6 overflow-y-auto text-slate-300 rounded-r-3xl z-20">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Mermaid Code
+                            Source</span>
+                        <button onclick="toggleCodePanel('code-components')"
+                            class="text-slate-400 hover:text-white text-xs font-bold cursor-pointer">✕</button>
+                    </div>
+                    <pre id="code-source-components"
+                        class="code-font text-xs leading-relaxed selection:bg-emerald-500/30">
+flowchart LR
+    subgraph SPA ["Cliente Web Frontend (React SPA)"]
+        subgraph CapaPresentacion ["Capa de Interfaces de Usuario"]
+            Pages["Vistas Globales (Pages)"]
+            Components["Componentes de UI"]
+        end
+        subgraph CapaLogica ["Lógica de Estado Encapsulada"]
+            Hooks["Hooks Personalizados"]
+        end
+        subgraph CapaDatos ["Servicios de Red y Comunicación"]
+            AxiosClient["Cliente API Axios"]
+        end
+    end
+
+    subgraph Infraestructura ["Servidor Backend (Orquestación Docker)"]
+        Backend["Contenedor API Node.js / Docker Compose"]
+    end
+
+    Pages --&gt; Components
+    Components --&gt; Hooks
+    Hooks --&gt; AxiosClient
+    AxiosClient --&gt;|"Interfaz Requerida: JSON REST API"| Backend</pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="estados"
+            class="reveal-card card-rose bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden grid grid-cols-1 lg:grid-cols-12">
+            <div
+                class="lg:col-span-5 p-8 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-200 bg-gradient-to-b from-rose-50/20 to-transparent">
+                <div>
+                    <div class="flex items-center space-x-2.5 mb-4">
+                        <span
+                            class="h-8 w-8 rounded-lg bg-rose-600 flex items-center justify-center text-white font-bold text-xs">05</span>
+                        <h3 class="text-lg font-bold text-slate-900 tracking-tight">Diagrama de Estados del Recurso</h3>
+                    </div>
+                    <p class="text-slate-600 text-xs md:text-sm leading-relaxed mb-6">
+                        Modela el ciclo de vida completo de un dispositivo tecnológico en el inventario, restringiendo
+                        las transiciones válidas según reglas de negocio.
+                    </p>
+                    <div class="space-y-3">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Guía Técnica</h4>
+                        <ul class="space-y-2 text-xs text-slate-600 font-medium">
+                            <li class="flex items-center gap-2"><span
+                                    class="h-1.5 w-1.5 rounded-full bg-rose-600"></span><strong>Estado inicial:</strong>
+                                El dispositivo inicia en <code class="text-rose-700">Disponible</code> tras registrarse.
+                            </li>
+                            <li class="flex items-center gap-2"><span
+                                    class="h-1.5 w-1.5 rounded-full bg-rose-600"></span><strong>Mantenimiento:</strong>
+                                Bloquea al activo para asignaciones o préstamos en aulas.</li>
+                            <li class="flex items-center gap-2"><span
+                                    class="h-1.5 w-1.5 rounded-full bg-rose-600"></span><strong>Estado final:</strong>
+                                La <code class="text-rose-700">Baja</code> representa destrucción o fin de ciclo
+                                irreversible del hardware.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="flex gap-2.5 mt-8">
+                    <button onclick="toggleCodePanel('code-states')"
+                        class="btn-glass px-4 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-all cursor-pointer">Ver
+                        Código</button>
+                    <button onclick="copyToClipboard('code-source-states')"
+                        class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer">Copiar
+                        Código</button>
+                </div>
+            </div>
+            <div
+                class="lg:col-span-7 p-8 bg-slate-50/40 flex flex-col items-center justify-center min-h-[500px] relative overflow-x-auto">
+                <div
+                    class="w-full min-w-[850px] transform hover:scale-105 transition-transform duration-500 ease-out mermaid flex justify-center">
+                    stateDiagram-v2
+                    [*] --&gt; Disponible : Alta técnica de equipo en el catálogo
+                    Disponible --&gt; Asignado : Autorización de préstamo a Aula / Alumno / Profesor
+                    Asignado --&gt; Disponible : Retorno al almacén y control conforme
+                    Disponible --&gt; En_Mantenimiento : Fallo crítico reportado / Rotura menor
+                    En_Mantenimiento --&gt; Disponible : Reparación exitosa certificada
+                    Asignado --&gt; En_Mantenimiento : Daño crítico reportado durante uso activo
+                    Disponible --&gt; Baja : Obsolescencia técnica / Rotura irreparable
+                    En_Mantenimiento --&gt; Baja : Reparación costosa o inviable
+                    Baja --&gt; [*] : Desguace y desecho de componentes del instituto
+                </div>
+                <div id="code-states"
+                    class="hidden absolute inset-0 bg-slate-900 p-6 overflow-y-auto text-slate-300 rounded-r-3xl z-20">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-xs font-bold uppercase tracking-wider text-rose-400">Mermaid Code
+                            Source</span>
+                        <button onclick="toggleCodePanel('code-states')"
+                            class="text-slate-400 hover:text-white text-xs font-bold cursor-pointer">✕</button>
+                    </div>
+                    <pre id="code-source-states" class="code-font text-xs leading-relaxed selection:bg-rose-500/30">
+stateDiagram-v2
+    [*] --&gt; Disponible : Alta técnica de equipo
+    Disponible --&gt; Asignado : Autorización de préstamo
+    Asignado --&gt; Disponible : Retorno conforme
+    Disponible --&gt; En_Mantenimiento : Fallo crítico
+    En_Mantenimiento --&gt; Disponible : Reparación exitosa
+    Asignado --&gt; En_Mantenimiento : Daño en uso activo
+    Disponible --&gt; Baja : Obsolescencia / Rotura
+    En_Mantenimiento --&gt; Baja : Inviable económicamente
+    Baja --&gt; [*] : Desguace y desecho</pre>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 space-y-2 pointer-events-none"></div>
+
+    <script>
+        // Inicialización del motor Mermaid.js
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            securityLevel: 'loose',
+            flowchart: {
+                htmlLabels: true,
+                useMaxWidth: false
+            }
+        });
+
+        // Alternar visualización del panel de código fuente (Toggle)
+        function toggleCodePanel(panelId) {
+            const panel = document.getElementById(panelId);
+            panel.classList.toggle('hidden');
+        }
+
+        // Utilidad nativa para copiar código al portapapeles
+        function copyToClipboard(sourceId) {
+            const text = document.getElementById(sourceId).innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                showNotification("⚡ Código fuente copiado correctamente");
+            }).catch(() => {
+                showNotification("❌ Error al copiar al portapapeles");
+            });
+        }
+
+        // Sistema dinámico de Notificaciones flotantes (Toasts)
+        function showNotification(message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = "bg-slate-900 text-white text-xs font-bold px-4 py-3 rounded-xl shadow-lg border border-slate-800 transition-all duration-300 opacity-0 transform translate-y-4 pointer-events-auto";
+            toast.innerText = message;
+
+            container.appendChild(toast);
+
+            // Forzar reflow para animación
+            setTimeout(() => {
+                toast.classList.remove('opacity-0', 'translate-y-4');
+            }, 50);
+
+            // Temporizador de desvanecimiento
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-4');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Implementación del Scroll Reveal avanzado con IntersectionObserver
+        document.addEventListener("DOMContentLoaded", () => {
+            const cards = document.querySelectorAll('.reveal-card');
+
+            const observerOptions = {
+                root: null,
+                threshold: 0.15,
+                rootMargin: "0px"
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, observerOptions);
+
+            cards.forEach(card => observer.observe(card));
+        });
+    </script>
+</body>
+
+</html>
