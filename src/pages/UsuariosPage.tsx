@@ -4,6 +4,18 @@ import { usuariosApi } from '../api/inventory'
 import { DataTable } from '../components/DataTable'
 import type { Usuario } from '../types/inventory'
 
+const ROL_STYLES: Record<string, string> = {
+  alumno:       'bg-[#3b82f6]/10 text-[#3b82f6] border-[#3b82f6]/20',
+  profesor:     'bg-[#10b981]/10 text-[#10b981] border-[#10b981]/20',
+  desarrollador:'bg-[#7c3aed]/10 text-[#7c3aed] border-[#7c3aed]/20',
+}
+
+const ROL_LABEL: Record<string, string> = {
+  alumno: 'Alumno',
+  profesor: 'Profesor',
+  desarrollador: 'Desarrollador',
+}
+
 export function UsuariosPage() {
   const { data: usuarios, loading, error, refetch } = useFetch(usuariosApi.getAll, [], [])
 
@@ -46,6 +58,13 @@ export function UsuariosPage() {
             <span className="font-mono text-xs text-[#71717a]">{u.email}</span>
           )
         },
+        {
+          key: 'rol', label: 'Rol', render: u => (
+            <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium border capitalize ${ROL_STYLES[u.rol] ?? 'bg-[#27272a] text-[#a1a1aa] border-[#27272a]'}`}>
+              {ROL_LABEL[u.rol] ?? u.rol}
+            </span>
+          )
+        },
         { key: 'departamento', label: 'Departamento' },
         {
           key: 'telefono', label: 'Teléfono', render: u => (
@@ -55,7 +74,16 @@ export function UsuariosPage() {
       ]}
       formFields={[
         { key: 'nombre', label: 'Nombre', required: true },
-        { key: 'email', label: 'Email', required: true },
+        { key: 'email', label: 'Email', type: 'email', required: true },
+        { key: 'password', label: 'Contraseña', type: 'password', required: true },
+        {
+          key: 'rol', label: 'Rol', required: true,
+          options: [
+            { value: 'alumno', label: '🎓 Alumno' },
+            { value: 'profesor', label: '👨‍🏫 Profesor' },
+            { value: 'desarrollador', label: '🛠️ Desarrollador' },
+          ]
+        },
         { key: 'departamento', label: 'Departamento' },
         { key: 'telefono', label: 'Teléfono' },
       ]}
