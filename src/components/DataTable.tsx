@@ -507,10 +507,7 @@ export function DataTable<T extends { id: number }>({
             data={exportData}
             disabled={loading}
           />
-          <button onClick={openCreate} className={twMerge(BTN_PRIMARY, 'hidden sm:inline-flex')}>
-            <Plus size={16} />
-            Nuevo
-          </button>
+
         </div>
       </div>
 
@@ -649,10 +646,10 @@ export function DataTable<T extends { id: number }>({
       <button
         onClick={openCreate}
         aria-label={`Agregar nuevo ${title}`}
-        className="sm:hidden fixed z-30 flex items-center justify-center gap-2 text-white font-semibold text-sm rounded-2xl shadow-2xl cursor-pointer transition-all duration-200 active:scale-95 fab-pulse"
+        className="fixed z-30 flex items-center justify-center gap-2 text-white font-semibold text-sm rounded-2xl shadow-2xl cursor-pointer transition-all duration-200 active:scale-95 fab-pulse"
         style={{
-          bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)',
-          right: '20px',
+          bottom: 'clamp(32px, calc(env(safe-area-inset-bottom, 0px) + 80px), 96px)',
+          right: '28px',
           width: '56px',
           height: '56px',
           background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
