@@ -9,6 +9,7 @@ import { Modal } from './Modal'
 import { useToast } from '../hooks/useToast'
 import { useScanner } from '../hooks/useScanner'
 import { ExportMenu } from './ExportMenu'
+import { ImportMenu } from './ImportMenu'
 import type { ExportColumn } from '../utils/exportUtils'
 
 // ---------------------------------------------------------------------------
@@ -51,6 +52,10 @@ interface DataTableProps<T extends { id: number }> {
   exportColumns?: ExportColumn[]
   /** Nombre base del archivo exportado (sin extensión) */
   exportFilename?: string
+  /** Callback para importar datos desde Excel (se muestra el botón Importar) */
+  onImport?: (file: File) => void
+  /** Estado de carga del proceso de importación */
+  importLoading?: boolean
   initialSearch?: string
   onSearchChange?: (val: string) => void
   initialNewProductData?: Record<string, unknown> | null
@@ -371,7 +376,7 @@ function ScannerPanel({ onResult, onClose }: ScannerPanelProps) {
 export function DataTable<T extends { id: number }>({
   title, subtitle, columns, data, loading, error,
   onCreate, onUpdate, onDelete, onRefresh, formFields,
-  exportColumns, exportFilename,
+  exportColumns, exportFilename, onImport, importLoading,
   initialSearch, onSearchChange,
   initialNewProductData, onClearNewProductData,
 }: DataTableProps<T>) {
@@ -507,6 +512,13 @@ export function DataTable<T extends { id: number }>({
             data={exportData}
             disabled={loading}
           />
+          {onImport && (
+            <ImportMenu
+              onFileSelect={onImport}
+              disabled={loading}
+              loading={importLoading}
+            />
+          )}
           <button onClick={openCreate} className={BTN_PRIMARY}>
             <Plus size={16} />
             Nuevo
