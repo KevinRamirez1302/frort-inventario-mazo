@@ -507,7 +507,7 @@ export function DataTable<T extends { id: number }>({
             data={exportData}
             disabled={loading}
           />
-          <button onClick={openCreate} className={BTN_PRIMARY}>
+          <button onClick={openCreate} className={twMerge(BTN_PRIMARY, 'hidden sm:inline-flex')}>
             <Plus size={16} />
             Nuevo
           </button>
@@ -640,6 +640,27 @@ export function DataTable<T extends { id: number }>({
           onClose={() => setIsScannerOpen(false)}
         />
       )}
+
+      {/* ── FAB móvil (solo visible en pantallas < sm) ── */}
+      {/*
+       *  position: fixed + bottom calculado para quedar SOBRE la bottom nav
+       *  (bottom nav ~64px + safe-area). z-index 30 para no tapar modales/escáner.
+       */}
+      <button
+        onClick={openCreate}
+        aria-label={`Agregar nuevo ${title}`}
+        className="sm:hidden fixed z-30 flex items-center justify-center gap-2 text-white font-semibold text-sm rounded-2xl shadow-2xl cursor-pointer transition-all duration-200 active:scale-95 fab-pulse"
+        style={{
+          bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)',
+          right: '20px',
+          width: '56px',
+          height: '56px',
+          background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
+          boxShadow: '0 8px 32px rgba(124, 58, 237, 0.45), 0 2px 8px rgba(0,0,0,0.4)',
+        }}
+      >
+        <Plus size={22} strokeWidth={2.5} />
+      </button>
     </div>
   )
 }
