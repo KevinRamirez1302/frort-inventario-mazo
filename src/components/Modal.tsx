@@ -46,7 +46,7 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
       <div className={twMerge('relative w-full max-h-full flex flex-col animate-scale-in', sizeClasses[size])}>
         <div className="bg-[#18181b]/85 backdrop-blur-xl border border-[#3f3f46]/60 rounded-2xl shadow-2xl shadow-black/40 overflow-hidden flex flex-col max-h-full">
           {/* Header */}
-          <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-[#27272a]">
+          <div className="shrink-0 sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-[#18181b]/85 backdrop-blur-xl border-b border-[#27272a]">
             <h2 className="text-lg font-semibold text-[#fafafa]" style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>{title}</h2>
             <button
               onClick={onClose}
