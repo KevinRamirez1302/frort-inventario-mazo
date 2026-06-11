@@ -215,7 +215,7 @@ export function useScanner(): UseScannerReturn {
     try {
       const newTorchState = !isTorchOn
       await videoTrack.applyConstraints({
-        // @ts-ignore — La API de torch no está en los tipos estándar de TypeScript
+        // @ts-expect-error — La API de torch no está en los tipos estándar de TypeScript
         advanced: [{ torch: newTorchState }],
       })
       setIsTorchOn(newTorchState)

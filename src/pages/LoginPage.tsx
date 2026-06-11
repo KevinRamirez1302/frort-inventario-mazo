@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { User, Lock, Eye, EyeOff } from 'lucide-react'
-import { useToast } from '../hooks/useToast'
+import { useToast } from '../hooks/ToastContext'
 import { authApi } from '../api/inventory'
 import logoMazito from '../assets/mazito.png'
 

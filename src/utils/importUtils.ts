@@ -66,7 +66,7 @@ function normalizeDate(v: unknown): string | null {
     } catch { /* noop */ }
   }
   // Intentar parsear fechas españolas DD/MM/YYYY
-  const m = s.match(/^(\d{1,2})[\-/](\d{1,2})[\-/](\d{4})$/)
+  const m = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/)
   if (m) {
     const [, d, mon, y] = m
     const iso = `${y}-${mon.padStart(2, '0')}-${d.padStart(2, '0')}`
@@ -103,7 +103,7 @@ function resolveCategoriaId(nombreCategoria: string | undefined, categorias: Cat
 
 // ─── Normalizar cabeceras de Excel ────────────────────────────────────────────
 
-const HEADER_ALIASES: Record<string, keyof ExcelRow> = {
+const HEADER_ALIASES: Record<string, Extract<keyof ExcelRow, string>> = {
   nombre: 'nombre',
   name: 'nombre',
   descripcion: 'descripcion',

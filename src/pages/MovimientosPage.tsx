@@ -6,7 +6,7 @@ import { ImportPreviewModal } from '../components/ImportPreviewModal'
 import type { Movimiento } from '../types/inventory'
 import { twMerge } from 'tailwind-merge'
 import { ArrowDownRight, ArrowUpRight, Wrench, Ban } from 'lucide-react'
-import { useToast } from '../hooks/useToast'
+import { useToast } from '../hooks/ToastContext'
 import { readExcelFile, classifyImportRows, type ImportResult, type ImportProduct } from '../utils/importUtils'
 
 const TIPO_BADGE: Record<string, string> = {

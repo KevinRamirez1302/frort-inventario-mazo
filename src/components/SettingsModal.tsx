@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Modal } from './Modal'
-import { useToast } from '../hooks/useToast'
+import { useToast } from '../hooks/ToastContext'
 import { authApi } from '../api/inventory'
 import { User, Mail, Lock, Eye, EyeOff, Camera, Trash2 } from 'lucide-react'
 

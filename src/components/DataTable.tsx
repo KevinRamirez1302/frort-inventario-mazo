@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import { twMerge } from 'tailwind-merge'
 import { Modal } from './Modal'
-import { useToast } from '../hooks/useToast'
+import { useToast } from '../hooks/ToastContext'
 import { useScanner } from '../hooks/useScanner'
 import { ExportMenu } from './ExportMenu'
 import { ImportMenu } from './ImportMenu'
@@ -99,7 +99,7 @@ const FIELD_ALIASES: Record<string, string> = {
 }
 
 function normalizeKey(raw: string): string {
-  return raw.toLowerCase().replace(/[\s_\-]/g, '').replace(/[^a-z]/g, '')
+  return raw.toLowerCase().replace(/[\s_-]/g, '').replace(/[^a-z]/g, '')
 }
 
 function mapKey(raw: string): string {

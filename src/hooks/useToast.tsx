@@ -1,30 +1,7 @@
-import { useState, useCallback, createContext, useContext, type ReactNode } from 'react'
+import { useState, useCallback, type ReactNode } from 'react'
 import { CheckCircle2, XCircle, Info, X } from 'lucide-react'
 import { twMerge } from 'tailwind-merge'
-
-export type ToastType = 'success' | 'error' | 'info'
-
-interface Toast {
-  id: number
-  message: string
-  type: ToastType
-}
-
-interface ToastContextType {
-  toasts: Toast[]
-  addToast: (message: string, type: ToastType) => void
-  removeToast: (id: number) => void
-}
-
-export const ToastContext = createContext<ToastContextType>({
-  toasts: [],
-  addToast: () => {},
-  removeToast: () => {},
-})
-
-export function useToast() {
-  return useContext(ToastContext)
-}
+import { ToastContext, type Toast, type ToastType } from './ToastContext'
 
 function useToastState() {
   const [toasts, setToasts] = useState<Toast[]>([])
@@ -80,7 +57,7 @@ const TOAST_ICON_COLORS: Record<ToastType, string> = {
 }
 
 function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: number) => void }) {
-  const icons: Record<ToastType, ReactNode> = {
+  const icons: Record<ToastType, React.ReactNode> = {
     success: <CheckCircle2 size={18} className={TOAST_ICON_COLORS[toast.type]} />,
     error: <XCircle size={18} className={TOAST_ICON_COLORS[toast.type]} />,
     info: <Info size={18} className={TOAST_ICON_COLORS[toast.type]} />,

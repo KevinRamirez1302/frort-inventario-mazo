@@ -52,6 +52,7 @@ function AppContent({ onLogout, user }: AppContentProps) {
 
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false)
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleScanSuccess = (text: string, _format: string) => {
     setIsScannerOpen(false)
     const scannedCode = text.trim()

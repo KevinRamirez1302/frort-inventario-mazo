@@ -11,7 +11,7 @@
 
 import { Flashlight, FlashlightOff, QrCode, X, CheckCircle2, Copy, RefreshCw, CameraOff, Scan } from 'lucide-react'
 import { useScanner } from '../hooks/useScanner'
-import { useToast } from '../hooks/useToast'
+import { useToast } from '../hooks/ToastContext'
 import { useState } from 'react'
 
 // ---------------------------------------------------------------------------

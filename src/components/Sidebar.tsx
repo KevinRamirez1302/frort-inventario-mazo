@@ -18,7 +18,7 @@ interface TabDef {
   iconSrc: string
 }
 
-export const TABS: TabDef[] = [
+const TABS: TabDef[] = [
   { key: 'dashboard', label: 'Dashboard', iconSrc: iconTablero },
   { key: 'productos', label: 'Productos', iconSrc: iconInventario },
   { key: 'categorias', label: 'Categorías', iconSrc: iconCategorias },
