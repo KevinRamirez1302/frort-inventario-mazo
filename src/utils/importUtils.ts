@@ -101,6 +101,72 @@ function resolveCategoriaId(nombreCategoria: string | undefined, categorias: Cat
   return found ? found.id : null
 }
 
+// ─── Normalizar cabeceras de Excel ────────────────────────────────────────────
+
+const HEADER_ALIASES: Record<string, keyof ExcelRow> = {
+  nombre: 'nombre',
+  name: 'nombre',
+  descripcion: 'descripcion',
+  descripción: 'descripcion',
+  desc: 'descripcion',
+  marca: 'marca',
+  brand: 'marca',
+  modelo: 'modelo',
+  model: 'modelo',
+  numeroserie: 'numeroSerie',
+  'nºserie': 'numeroSerie',
+  'nº serie': 'numeroSerie',
+  numserie: 'numeroSerie',
+  'n° serie': 'numeroSerie',
+  nserie: 'numeroSerie',
+  serie: 'numeroSerie',
+  sn: 'numeroSerie',
+  s_n: 'numeroSerie',
+  estado: 'estado',
+  status: 'estado',
+  ubicacion: 'ubicacion',
+  ubicación: 'ubicacion',
+  location: 'ubicacion',
+  precio: 'precio',
+  'precio€': 'precio',
+  'precio(€)': 'precio',
+  'precio(eur)': 'precio',
+  price: 'precio',
+  fechaadquisicion: 'fechaAdquisicion',
+  'fechaadq.': 'fechaAdquisicion',
+  'fecha adq.': 'fechaAdquisicion',
+  fechaadq: 'fechaAdquisicion',
+  'fecha adquisicion': 'fechaAdquisicion',
+  'fecha adquisición': 'fechaAdquisicion',
+  fechacompra: 'fechaAdquisicion',
+  'fecha compra': 'fechaAdquisicion',
+  categoria: 'categoria',
+  categoría: 'categoria',
+  category: 'categoria',
+}
+
+function removeAccents(str: string): string {
+  return str.normalize('NFD').replace(/\p{Diacritic}/gu, '')
+}
+
+function normalizeHeaderKey(key: string): string {
+  const raw = removeAccents(key).toLowerCase().replace(/[^a-z0-9]/g, '')
+  return HEADER_ALIASES[raw] ?? raw
+}
+
+function normalizeRowKeys(row: Record<string, unknown>): ExcelRow {
+  const normalized: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(row)) {
+    const normKey = normalizeHeaderKey(key)
+    // Si la clave normalizada ya existe (dos columnas distintas mapean a la misma),
+    // conservar la primera que tenga valor no vacío
+    if (normalized[normKey] === undefined || normalized[normKey] === '') {
+      normalized[normKey] = value
+    }
+  }
+  return normalized as ExcelRow
+}
+
 // ─── Leer Excel ───────────────────────────────────────────────────────────────
 
 export function readExcelFile(file: File): Promise<ExcelRow[]> {
@@ -120,7 +186,9 @@ export function readExcelFile(file: File): Promise<ExcelRow[]> {
           return
         }
         const json = XLSX.utils.sheet_to_json<ExcelRow>(firstSheet, { defval: '' })
-        resolve(json)
+        // Normalizar cabeceras para que coincidan con las claves esperadas
+        const normalized = json.map(normalizeRowKeys)
+        resolve(normalized)
       } catch (err) {
         reject(new Error(`Error al leer Excel: ${(err as Error).message}`))
       }
