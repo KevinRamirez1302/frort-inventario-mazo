@@ -42,6 +42,14 @@ export interface ImportResult {
 
 const VALID_ESTADOS: EstadoProducto[] = ['disponible', 'asignado', 'en_mantenimiento', 'baja']
 
+const EMPTY_VALUES = new Set(['—', '-', '–', 'n/a', 'na', 'sin datos', 's/d', 'null', 'none'])
+
+function isEmptyValue(v: unknown): boolean {
+  if (v === null || v === undefined || v === '') return true
+  const s = String(v).trim().toLowerCase()
+  return EMPTY_VALUES.has(s)
+}
+
 function normalizeString(v: unknown): string | undefined {
   if (v === null || v === undefined) return undefined
   const s = String(v).trim()
@@ -49,14 +57,14 @@ function normalizeString(v: unknown): string | undefined {
 }
 
 function normalizeNumber(v: unknown): number | null {
-  if (v === null || v === undefined || v === '') return null
-  const n = typeof v === 'number' ? v : Number(String(v).replace(',', '.'))
+  if (isEmptyValue(v)) return null
+  const n = typeof v === 'number' ? v : Number(String(v).replace(/[,\s]/g, '.').replace(/\.{2,}/g, '.'))
   if (Number.isNaN(n)) return null
   return n
 }
 
 function normalizeDate(v: unknown): string | null {
-  if (v === null || v === undefined || v === '') return null
+  if (isEmptyValue(v)) return null
   const s = String(v).trim()
   // Si ya es ISO-like YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
@@ -175,11 +183,11 @@ export function readExcelFile(file: File): Promise<ExcelRow[]> {
     reader.onload = (e) => {
       try {
         const data = e.target?.result
-        if (!data) {
+        if (!data || !(data instanceof ArrayBuffer)) {
           reject(new Error('No se pudo leer el archivo'))
           return
         }
-        const workbook = XLSX.read(data, { type: 'binary' })
+        const workbook = XLSX.read(data, { type: 'array' })
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
         if (!firstSheet) {
           reject(new Error('El archivo Excel no tiene hojas'))
@@ -194,7 +202,7 @@ export function readExcelFile(file: File): Promise<ExcelRow[]> {
       }
     }
     reader.onerror = () => reject(new Error('Error al leer el archivo'))
-    reader.readAsBinaryString(file)
+    reader.readAsArrayBuffer(file)
   })
 }
 
@@ -223,7 +231,7 @@ export function classifyImportRows(
 
     // Validar estado si se proporciona
     let estado: EstadoProducto | null = null
-    if (row.estado !== undefined && row.estado !== '') {
+    if (!isEmptyValue(row.estado)) {
       estado = normalizeEstado(row.estado)
       if (!estado) {
         errors.push({ rowIndex, field: 'estado', message: `Estado inválido: "${row.estado}"`, rawValue: row.estado })
@@ -233,7 +241,7 @@ export function classifyImportRows(
 
     // Validar precio
     let precio: number | null = null
-    if (row.precio !== undefined && row.precio !== '') {
+    if (!isEmptyValue(row.precio)) {
       precio = normalizeNumber(row.precio)
       if (precio === null) {
         errors.push({ rowIndex, field: 'precio', message: `Precio inválido: "${row.precio}"`, rawValue: row.precio })
@@ -243,7 +251,7 @@ export function classifyImportRows(
 
     // Validar fecha
     let fechaAdquisicion: string | null = null
-    if (row.fechaAdquisicion !== undefined && row.fechaAdquisicion !== '') {
+    if (!isEmptyValue(row.fechaAdquisicion)) {
       fechaAdquisicion = normalizeDate(row.fechaAdquisicion)
       if (!fechaAdquisicion) {
         errors.push({ rowIndex, field: 'fechaAdquisicion', message: `Fecha inválida: "${row.fechaAdquisicion}"`, rawValue: row.fechaAdquisicion })
